@@ -20,6 +20,9 @@ enum ESGSRTarget
 };
 
 
+#if ENGINE_MAJOR_VERSION >= 5
+#define SGSR_HALF_PRECISION_SUPPORTED 1
+#endif
 #define SGSR_CVAR_NAME_HALF_PRECISION "r.Qualcomm.SGSR.HalfPrecision"
 
 #define SGSR_CVAR_NAME_TARGET "r.Qualcomm.SGSR.Target"
