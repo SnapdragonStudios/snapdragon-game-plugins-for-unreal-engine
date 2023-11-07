@@ -30,7 +30,7 @@ Note: The plugins are normally just drag and drop, and usually they can all be u
 ## Snapdragon™ Game Super Resolution 
 
 *Available Versions:*
-| [4.27](https://github.com/quic/snapdragon-game-plugins-for-unreal-engine/tree/engine/4.27/Plugins/SGSR) | [5.0](https://github.com/quic/snapdragon-game-plugins-for-unreal-engine/tree/engine/5.0/Plugins/SGSR) | [5.1](https://github.com/quic/snapdragon-game-plugins-for-unreal-engine/tree/engine/5.1/Plugins/SGSR) | [5.2](https://github.com/quic/snapdragon-game-plugins-for-unreal-engine/tree/engine/5.2/Plugins/SGSR) | 
+| [4.27](https://github.qualcomm.com/GameTech/Snapdragon-Game-Plug-Ins-for-Unreal-Engine/tree/engine/4.27/Plugins/SGSR) | [5.0](https://github.qualcomm.com/GameTech/Snapdragon-Game-Plug-Ins-for-Unreal-Engine/tree/engine/5.0/Plugins/SGSR) | [5.1](https://github.qualcomm.com/GameTech/Snapdragon-Game-Plug-Ins-for-Unreal-Engine/tree/engine/5.1/Plugins/SGSR) | [5.2](https://github.qualcomm.com/GameTech/Snapdragon-Game-Plug-Ins-for-Unreal-Engine/tree/engine/5.2/Plugins/SGSR) | 
 |------|-----|-----|-----|
 
 Snapdragon™ Game Studios developed Snapdragon™ Game Super Resolution (Snapdragon™ GSR or SGSR), which integrates upscaling and sharpening in one single GPU shader pass. The algorithm uses a 12-tap Lanczos-like scaling filter and adaptive sharpening filter, which presents smooth images and sharp edges.
