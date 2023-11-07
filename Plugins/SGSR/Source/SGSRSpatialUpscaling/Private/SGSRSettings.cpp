@@ -7,6 +7,7 @@
 //============================================================================================================
 #include "SGSRSettings.h"
 #include "LogSGSR.h"
+#include "Misc/ConfigUtilities.h"
 
 void HalfPrecisionCVarSetToFalse(IConsoleVariable* const Var)
 {
@@ -36,8 +37,8 @@ USGSR_Settings::USGSR_Settings(const FObjectInitializer& obj)
     Super::PostInitProperties();
 
     const TCHAR* const iniSettingsString = TEXT("/Script/SGSRSpatialUpscaling.SGSR_Settings");
-	ApplyCVarSettingsFromIni(iniSettingsString, *GEngineIni, ECVF_SetByProjectSetting);
-	ApplyCVarSettingsFromIni(iniSettingsString, *GGameIni, ECVF_SetByProjectSetting);
+    UE::ConfigUtilities::ApplyCVarSettingsFromIni(iniSettingsString, *GEngineIni, ECVF_SetByProjectSetting);
+    UE::ConfigUtilities::ApplyCVarSettingsFromIni(iniSettingsString, *GGameIni, ECVF_SetByProjectSetting);
 }
 
 #if WITH_EDITOR
