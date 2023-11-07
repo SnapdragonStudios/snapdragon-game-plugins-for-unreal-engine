@@ -19,7 +19,7 @@ static TAutoConsoleVariable<int32> SGSR_TargetCVar(
 
 static TAutoConsoleVariable<bool> SGSR_HalfPrecisionCVar(
     TEXT(SGSR_CVAR_NAME_HALF_PRECISION),
-	0,//#HalfPrecisionNotSupported: half-precision often speeds processing time with little or no additional noticeable artifacts, but is not supported until UE5.0
+    1, //half-precision often speeds processing time with little or no additional noticeable artifacts
     TEXT("If 1, use 16-bit precision for many SGSR operations.  Available only as of UE5.0.0; UE4 does not support half-precision in shader code"),
     ECVF_RenderThreadSafe
 );
@@ -45,13 +45,7 @@ public:
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
 	{
-		//#HalfPrecisionNotSupported
-		FPermutationDomain PermutationVector(Parameters.PermutationId);
-        if (PermutationVector.Get<FSGSR_HalfPrecision>())
-        {
-            return false;
-        }
-
+        //it doesn't make sense for this case, but we could prevent certain permutations from being cooked like so:
 		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5)|| IsMobilePlatform(Parameters.Platform);
 	}
 
@@ -64,7 +58,6 @@ void FSGSRSubpassScaler::ParseEnvironment(FRDGBuilder& GraphBuilder, const FView
 
 void OnChange_SGSR_HalfPrecisionCVar(IConsoleVariable* Var)
 {
-	HalfPrecisionCVarSetToFalse(Var);//#HalfPrecisionNotSupported
 }
 
 static bool inline SgsrTargetValueValid(const int32 SgsrTargetValue)

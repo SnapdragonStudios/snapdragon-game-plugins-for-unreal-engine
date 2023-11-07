@@ -37,9 +37,7 @@ USGSR_Settings::USGSR_Settings(const FObjectInitializer& obj)
 
     const TCHAR* const iniSettingsString = TEXT("/Script/SGSRSpatialUpscaling.SGSR_Settings");
 	ApplyCVarSettingsFromIni(iniSettingsString, *GEngineIni, ECVF_SetByProjectSetting);
-    ApplyCVarSettingsFromIni(iniSettingsString, *GGameIni, ECVF_SetByProjectSetting);
-
-	HalfPrecisionCVarSetToFalse(IConsoleManager::Get().FindConsoleVariable(TEXT(SGSR_CVAR_NAME_HALF_PRECISION)));
+	ApplyCVarSettingsFromIni(iniSettingsString, *GGameIni, ECVF_SetByProjectSetting);
 }
 
 #if WITH_EDITOR
