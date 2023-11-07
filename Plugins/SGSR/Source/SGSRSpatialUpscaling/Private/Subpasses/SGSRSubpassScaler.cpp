@@ -6,6 +6,7 @@
 //
 //============================================================================================================
 #include "SGSRSubpassScaler.h"
+#include "DataDrivenShaderPlatformInfo.h"
 #include "SGSRSettings.h"
 
 //#SGSR_TARGET_Definitions
@@ -19,7 +20,7 @@ static TAutoConsoleVariable<int32> SGSR_TargetCVar(
 
 static TAutoConsoleVariable<bool> SGSR_HalfPrecisionCVar(
     TEXT(SGSR_CVAR_NAME_HALF_PRECISION),
-    1,//half-precision often speeds processing time with little or no additional noticeable artifacts
+    1, //half-precision often speeds processing time with little or no additional noticeable artifacts
     TEXT("If 1, use 16-bit precision for many SGSR operations.  Available only as of UE5.0.0; UE4 does not support half-precision in shader code"),
     ECVF_RenderThreadSafe
 );

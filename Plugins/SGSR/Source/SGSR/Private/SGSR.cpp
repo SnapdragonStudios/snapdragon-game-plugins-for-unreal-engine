@@ -13,7 +13,6 @@
 #include "ISettingsModule.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-
 // DUPLICATED FROM UNREALENGINE.CPP
 /** Special function that loads an engine texture and adds it to root set in cooked builds.
   * This is to prevent the textures from being added to GC clusters (root set objects are not clustered)
