@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+	<resourceCopies>
+		<log text="Copying libSNPE.so"/>
+		<!-- note: have to stage this since we linked it -->
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libc++_shared.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libc++_shared.so" />		
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libcalculator.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libcalculator.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libcalculator_htp.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libcalculator_htp.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libhta_hexagon_runtime_snpe.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libhta_hexagon_runtime_snpe.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libPlatformValidatorShared.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libPlatformValidatorShared.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libSNPE.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSNPE.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libSnpeHtpPrepare.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeHtpPrepare.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libSnpeDspV65Stub.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeDspV65Stub.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libSnpeDspV66Stub.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeDspV66Stub.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libSnpeHta.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeHta.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libSnpeHtpV68Stub.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeHtpV68Stub.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libSnpeHtpV69Stub.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeHtpV69Stub.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/aarch64-android/libSnpeHtpV73Stub.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeHtpV73Stub.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/dsp/libcalculator_skel.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libcalculator_skel.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/dsp/libSnpeHtpV68Skel.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeHtpV68Skel.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/dsp/libSnpeHtpV69Skel.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeHtpV69Skel.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/dsp/libSnpeDspV65Skel.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeDspV65Skel.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/dsp/libSnpeDspV66Skel.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeDspV66Skel.so" />
+		<copyFile src="$S(AbsPluginDir)/lib/dsp/libSnpeHtpV73Skel.so"
+					dst="$S(BuildDir)/libs/$S(Architecture)/libSnpeHtpV73Skel.so" />		
+	</resourceCopies>
+</root>
