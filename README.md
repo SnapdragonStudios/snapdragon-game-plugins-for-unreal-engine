@@ -70,7 +70,7 @@ Qualcomm™ Game Studios developed Qualcomm™ NPE Plugin, which integrates Qual
 9. Your *"[project path]\plugins\SNPE\Source\ThirdParty\SNPELibrary\lib\"* must now look like:
 <img src="media/SNPE_Directory.jpg" width="500" height="500" />
 
-More information can be found at "*[project path]\plugins\SNPE\SNPE* UE plugin blueprint reference.pdf"
+More information can be found at [SNPE UE plugin blueprint reference.pdf](https://github.com/quic/snapdragon-game-plugins-for-unreal-engine/blob/engine/5.3/Plugins/SNPE/SNPE%20UE%20plugin%20blueprint%20reference.pdf).
 
 # License
 
