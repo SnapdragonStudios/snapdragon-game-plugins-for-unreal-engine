@@ -1,26 +1,48 @@
 # Qualcomm™ NPE Plugin 
 
-Qualcomm™ Game Studios developed Qualcomm™ NPE Plugin, which integrates Qualcomm's Neural Processing SDK to Unreal Engine and provides C++ and blueprint functionality to load, DLC models and run inference with them using either CPU, GPU or the device's HTP.
+Plugin for **Neural Network Inference** using the *Qualcomm Neural Processing SDK* (also known as *SNPE*) to be used with Unreal Engine's *Neural Network Engine* (*NNE*) inference framework.<br>
 
-### Instructions
+This plugin enables hardware acceleration of AI model inference on devices with Qualcomm® Hexagon™ Processors.
 
-1. Clone or download the plugin ("SNPE")
-2. Copy the plugin to the project's plugin folder.
-3. Download Qualcomm's Neural Processing SDK from [Qualcomm™ Neural Processing SDK](https://developer.qualcomm.com/software/qualcomm-neural-processing-sdk) , Make sure to download the Windows and Linux version and selecting a version higher or equal to 2.14
-4. From the installed Neural Processing SDK directory **copy** the contents of *"\AIStack\SNPE\[version]\include\SNPE"* to *"[project path]\plugins\SNPE\Source\ThirdParty\SNPELibrary\inc"*
-5. To build for Android. From the installed Neural Processing SDK directory:
-	**- copy** the folder of *"\AIStack\SNPE\[version]\include\lib\aarch64-android"* to *"[project path]\plugins\SNPE\Source\ThirdParty\SNPELibrary\lib\"*
-6. For the windows x86-64 build (and the editor), From the installed Neural Processing SDK directory:
-	**- copy** the contents of *"\AIStack\SNPE\[version]\include\lib\x86_64-windows-msvc"* to *"[project path]\plugins\SNPE\Source\ThirdParty\SNPELibrary\lib\"*
-7. For the windows ARM64 build and Windows on Snapdragon systems, From the installed Neural Processing SDK directory:
-	**- copy** the contents of *"\AIStack\SNPE\[version]\include\lib\aarch64-windows-msvc"* to *"[project path]\plugins\SNPE\Source\ThirdParty\SNPELibrary\lib\"*
-	**- copy** the files *msvcp140.dll* and *vcruntime140.dll* (this must be supplied with your VS installation) to *"[project path]\plugins\SNPE\Source\ThirdParty\SNPELibrary\lib\aarch64-windows-msvc\"*
-8. To run on DSP, HTP you need to **copy** the content of the specific library of your device to *"[project path]\plugins\SNPE\Source\ThirdParty\SNPELibrary\lib\dsp\"* those can be *"\AIStack\SNPE\[version]\include\lib\[hexagon-v73 | hexagon-v68 | hexagon-v66]"*. But if you are not sure of the model you can copy the content of the 3 directories.
-9. Your *"[project path]\plugins\SNPE\Source\ThirdParty\SNPELibrary\lib\"* must now look like:<br><br>
-<img src="Media/SNPE_Directory.jpg" width="500" height="500" />
+Developed and Tested with **Unreal Engine 5.4**.
 
-More information can be found at [SNPE UE plugin blueprint reference.pdf](https://github.com/quic/snapdragon-game-plugins-for-unreal-engine/blob/engine/5.3/Plugins/SNPE/SNPE%20UE%20plugin%20blueprint%20reference.pdf).
+## Supported Platforms & Hardware
 
-# License
+| Platform | Support |
+| --- | --- |
+|Android|Yes|
+|Windows x86_64|Editor Only (CPU inference)|
+|Windows arm64|In-Progress|
 
-Snapdragon™ Game Super Resolution is licensed under the BSD 3-clause “New” or “Revised” License. Check out the [LICENSE](LICENSE) for more details.
+**CPU** inference can be enabled via a boolean CVar, `snpe.CpuFallback`.
+
+## Getting Started
+
+### Plugin setup
+
+1. **Clone the upstream repo** and follow the standard steps given by Unreal Engine to add this plugin as an **engine plugin** or **project plugin**.<br>
+
+1. **Download the [Qualcomm Neural Processing SDK](https://developer.qualcomm.com/software/qualcomm-neural-processing-sdk)**, also known as the *SNPE SDK* (currently tested with version 2.19).<br>
+
+1. **`SNPELibrarySetup.bat`** is provided to copy the necessary include and library files from the downloaded SNPE SDK to the plugin. Use it as follows:<br>
+```console
+>    cd <PATH_TO_THIS_REPO>\Plugins\SNPE\Source\ThirdParty\SNPELibrary
+>    .\SNPELibrarySetup.bat C:\Qualcomm\AIStack\SNPE\2.19.0.240124
+```
+### Usage in your Unreal project
+
+1. ***For Android builds:***  In the Project Settings ensure that the option **`Disable libc++_shared validation for all dependencies`** is **enabled**.
+
+1. **Drag-and-drop the model files (`.dlc` format)** into your Unreal project's Content Browser so that they are automatically converted into `UNNEModelData` data assets.
+    - Use the downloaded SNPE SDK to create DLC files from a variety of neural network file formats.<br>
+    Documentation for this step is provided in the [SNPE SDK Reference Guide](https://docs.qualcomm.com/bundle/publicresource/topics/80-63442-2/introduction.html).
+    - *This plugin assumes that all DLC models have **fixed input dimensions** (which you define while creating DLC models with the SNPE SDK).*
+
+1. Finally, use this runtime to load the data assets and perform inference via the common NNE interfaces (see this [Quick Start Guide](https://dev.epicgames.com/community/learning/tutorials/34q9/unreal-engine-nne-quick-start-guide-5-3) for an example using Unreal Engine 5.3).
+    - We implement `INNERuntimeCPU` and use `NNERuntimeSNPE` as the runtime name. So, for example, the runtime can be retrieved by:
+    ```cpp
+    TWeakInterfacePtr<INNERuntimeCPU> Runtime = UE::NNE::GetRuntime<INNERuntimeCPU>(TEXT("NNERuntimeSNPE"));
+    ```
+## Sample Project
+
+A sample project is provided at *`<PATH_TO_THIS_REPO>\Samples\SNPE`* (see its Readment contents for instructions)

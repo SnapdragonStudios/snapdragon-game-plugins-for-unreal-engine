@@ -1,0 +1,30 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "HandTrackerSubsystem",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "HandTrackerSubsystem",
+			"Type": "Runtime",
+			"LoadingPhase": "PreLoadingScreen"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "NNERuntimeSNPE",
+			"Enabled": true
+		}
+	]
+}
