@@ -156,3 +156,6 @@ inc/
 # Re-ignore vcxproj
 *.vcxproj
 *.vcxproj.filters
+
+# Enable images (Media folder)
+!*.png
