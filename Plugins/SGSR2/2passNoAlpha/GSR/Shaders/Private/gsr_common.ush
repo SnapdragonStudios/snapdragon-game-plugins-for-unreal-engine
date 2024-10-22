@@ -1,0 +1,76 @@
+//============================================================================================================
+//
+//
+//                  Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+//                              SPDX-License-Identifier: BSD-3-Clause
+//
+//============================================================================================================
+
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Private/Random.ush"
+#include "/Engine/Private/TextureSampling.ush"
+#include "/Engine/Private/FastMath.ush"
+#include "/Engine/Private/MonteCarlo.ush"
+
+#pragma warning(error: 3206)
+
+float2 InputInfo_Extent;
+float2 InputInfo_ExtentInverse;
+float2 InputInfo_ScreenPosToViewportScale;
+float2 InputInfo_ScreenPosToViewportBias;
+uint2  InputInfo_ViewportMin;
+uint2  InputInfo_ViewportMax;
+float2 InputInfo_ViewportSize;
+float2 InputInfo_ViewportSizeInverse;
+float2 InputInfo_UVViewportMin;
+float2 InputInfo_UVViewportMax;
+float2 InputInfo_UVViewportSize;
+float2 InputInfo_UVViewportSizeInverse;
+float2 InputInfo_UVViewportBilinearMin;
+float2 InputInfo_UVViewportBilinearMax;
+float2 InputJitter;
+
+float2 DepthInfo_Extent;
+float2 DepthInfo_ExtentInverse;
+float2 DepthInfo_ScreenPosToViewportScale;
+float2 DepthInfo_ScreenPosToViewportBias;
+uint2 DepthInfo_ViewportMin;
+uint2 DepthInfo_ViewportMax;
+float2 DepthInfo_ViewportSize;
+float2 DepthInfo_ViewportSizeInverse;
+float2 DepthInfo_UVViewportMin;
+float2 DepthInfo_UVViewportMax;
+float2 DepthInfo_UVViewportSize;
+float2 DepthInfo_UVViewportSizeInverse;
+float2 DepthInfo_UVViewportBilinearMin;
+float2 DepthInfo_UVViewportBilinearMax;
+
+float2 HistoryInfo_Extent;
+float2 HistoryInfo_ExtentInverse;
+float2 HistoryInfo_ScreenPosToViewportScale;
+float2 HistoryInfo_ScreenPosToViewportBias;
+uint2  HistoryInfo_ViewportMin;
+uint2  HistoryInfo_ViewportMax;
+float2 HistoryInfo_ViewportSize;
+float2 HistoryInfo_ViewportSizeInverse;
+float2 HistoryInfo_UVViewportMin;
+float2 HistoryInfo_UVViewportMax;
+float2 HistoryInfo_UVViewportSize;
+float2 HistoryInfo_UVViewportSizeInverse;
+float2 HistoryInfo_UVViewportBilinearMin;
+float2 HistoryInfo_UVViewportBilinearMax;
+
+float2 OutputInfo_Extent;
+float2 OutputInfo_ExtentInverse;
+float2 OutputInfo_ScreenPosToViewportScale;
+float2 OutputInfo_ScreenPosToViewportBias;
+uint2  OutputInfo_ViewportMin;
+uint2  OutputInfo_ViewportMax;
+float2 OutputInfo_ViewportSize;
+float2 OutputInfo_ViewportSizeInverse;
+float2 OutputInfo_UVViewportMin;
+float2 OutputInfo_UVViewportMax;
+float2 OutputInfo_UVViewportSize;
+float2 OutputInfo_UVViewportSizeInverse;
+float2 OutputInfo_UVViewportBilinearMin;
+float2 OutputInfo_UVViewportBilinearMax;

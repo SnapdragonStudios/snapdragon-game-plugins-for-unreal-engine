@@ -1,0 +1,95 @@
+//============================================================================================================
+//
+//
+//                  Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+//                              SPDX-License-Identifier: BSD-3-Clause
+//
+//============================================================================================================
+
+#include "gsr_common.ush"
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Private/ScreenPass.ush"
+
+// =====================================================================================
+//
+// SHADER RESOURCES
+//
+// =====================================================================================
+
+Texture2D InputVelocity;
+Texture2D InputDepth;
+float Exposure_co_rcp;
+float AngleVertical;
+SamplerState PointClamp;
+SamplerState PointClamp_Velocity;
+
+#define EPSILON 1.19e-07f /*1.192092896e-07f*/
+
+// =====================================================================================
+// 
+// SNAPDRAGON GAME SUPER RESOLUTION
+// 
+// =====================================================================================
+
+
+// =====================================================================================
+//
+// ENTRY POINTS
+//
+// =====================================================================================
+
+void MainPS(noperspective float4 UVAndScreenPos : TEXCOORD0, float4 SvPosition : SV_POSITION, out float4 OutColor : SV_Target0)
+{
+    float2 ViewportUV = SvPosition.xy * DepthInfo_ViewportSizeInverse;;
+    float2 gatherCoord = ViewportUV - float2(0.5f, 0.5f) * DepthInfo_ViewportSizeInverse;;
+    
+    float4 topleft = InputDepth.GatherRed(PointClamp, gatherCoord);
+    float4 topRight = InputDepth.GatherRed(PointClamp, gatherCoord + float2(DepthInfo_ViewportSizeInverse.x * 2.0f, 0.0f)).xyzw;
+    float4 bottomLeft = InputDepth.GatherRed(PointClamp, gatherCoord + float2(0.0f, DepthInfo_ViewportSizeInverse.y * 2.0f)).xyzw;
+    float4 bottomRight = InputDepth.GatherRed(PointClamp, gatherCoord + float2(DepthInfo_ViewportSizeInverse.x * 2.0f, DepthInfo_ViewportSizeInverse.y * 2.0f)).xyzw;
+
+    float maxC = max(max(max(topleft.y, topRight.x), bottomLeft.z), bottomRight.w);
+    float topleft4 = max(max(max(topleft.y, topleft.x), topleft.z), topleft.w);
+    float topLeftMax9 = max(bottomLeft.w, max(max(maxC, topleft4), topRight.w));
+
+    float depthclip = 0.0f;
+    if (maxC > 1.0e-05f)
+    {
+        float topRight4 = max(max(max(topRight.y, topRight.x), topRight.z), topRight.w);
+        float bottomLeft4 = max(max(max(bottomLeft.y, bottomLeft.x), bottomLeft.z), bottomLeft.w);
+        float bottomRight4 = max(max(max(bottomRight.y, bottomRight.x), bottomRight.z), bottomRight.w);
+
+        float Wdepth = 0.f;
+        float Ksep = 1.37e-05f;
+        float Kfov = AngleVertical; /** (InputInfo_ViewportSize.x / InputInfo_ViewportSize.y)*/
+        float diagonal_length = length(InputInfo_ViewportSize);
+        float Ksep_Kfov_diagonal = Ksep * Kfov * diagonal_length;
+
+        float Depthsep = Ksep_Kfov_diagonal * maxC;
+        Wdepth += saturate(Depthsep / (abs(maxC - topleft4) + EPSILON));
+        Wdepth += saturate(Depthsep / (abs(maxC - topRight4) + EPSILON));
+        Wdepth += saturate(Depthsep / (abs(maxC - bottomLeft4) + EPSILON));
+        Wdepth += saturate(Depthsep / (abs(maxC - bottomRight4) + EPSILON));
+
+        depthclip = saturate(1.0f - Wdepth * 0.25f);
+    }
+
+    float4 EncodedVelocity = InputVelocity[int2(SvPosition.xy)];
+    
+    float2 motion;
+    if (float(EncodedVelocity.x) > 0.0f)
+    {
+        motion = DecodeVelocityFromTexture(EncodedVelocity).xy;
+    }
+    else
+    {
+        float2 ScreenPos = float2(2.0f * ViewportUV.x - 1.0f, 1.0f - 2.0f * ViewportUV.y);
+        float3 Position = float3(ScreenPos, topLeftMax9);
+        float4 CurClip = float4(Position, 1.0f);
+        float4 PreClip = mul(CurClip, View.ClipToPrevClip);
+        float2 PreScreen = PreClip.xy / PreClip.w;
+        motion = Position.xy - PreScreen;
+    }
+    
+    OutColor = float4(motion, depthclip, 0.0f);
+}

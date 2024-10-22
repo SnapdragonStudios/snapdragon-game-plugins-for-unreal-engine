@@ -1,0 +1,32 @@
+{
+	"FileVersion": 1,
+	"Version": 1,
+	"VersionName": "2.0",
+	"FriendlyName": "SGSR 2.0",
+	"Description": "Snapdragon Game Super Resolution 2.0",
+	"Category": "Rendering",
+	"CreatedBy": "Qualcomm",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EngineVersion": "4.27.0",
+	"CanContainContent": true,
+	"Installed": true,
+	"SupportedTargetPlatforms": [
+		"Win64",
+		"Android"
+	],
+	"Modules": [
+		{
+			"Name": "GSR",
+			"Type": "Runtime",
+			"LoadingPhase": "PostEngineInit"
+		},
+		{
+			"Name": "GSRTUModule",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit"
+		}
+	]
+}
