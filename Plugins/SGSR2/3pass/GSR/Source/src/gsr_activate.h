@@ -92,7 +92,7 @@ void Activate(uint2 DisThreadID)
 			float weight = Bilinweights[index];
 			Wdepth += saturate(Depthsep / (abs(fPrevdepth - depth) + EPSILON)) * weight;
 
-			float2 gPrevdepth2 = MotionDepthAlphaBuffer.GatherBlue(PointClamp2, PrevUV, sampleOffset[index + 1]).zw;
+			float2 gPrevdepth2 = MotionDepthAlphaBuffer.GatherBlue(PointClamp2, PrevUV, sampleOffset[index + 1]).xy;
 			fPrevdepth = max(max(frac(gPrevdepth2.x), frac(gPrevdepth2.y)), tdepth2);
 			Depthsep = Ksep_Kfov_diagonal * max(fPrevdepth, depth);
 			weight = Bilinweights[index + 1];
