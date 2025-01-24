@@ -60,8 +60,8 @@ void Update(uint2 DisThreadID)
 	float2 srcOutputPos = Hruv * InputInfo_ViewportSize;
 	int2 InputPos = srcOutputPos;
 	float2 Jitteruv;
-	Jitteruv.x = saturate(Hruv.x + InputJitter.x * OutputInfo_ViewportSizeInverse.x);
-	Jitteruv.y = saturate(Hruv.y + InputJitter.y * OutputInfo_ViewportSizeInverse.y);
+	Jitteruv.x = saturate(Hruv.x + InputJitter.x * InputInfo_ViewportSizeInverse.x);
+	Jitteruv.y = saturate(Hruv.y + InputJitter.y * InputInfo_ViewportSizeInverse.y);
 
 	float4 mda = MotionDepthClipAlphaBuffer.SampleLevel(LinearClamp1, Jitteruv, 0).xyzw;
 
