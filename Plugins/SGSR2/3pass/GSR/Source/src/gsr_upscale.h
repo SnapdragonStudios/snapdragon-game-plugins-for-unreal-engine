@@ -56,8 +56,8 @@ void Update(uint2 DisThreadID)
 {
 	float2 Hruv = (DisThreadID + 0.5f) * HistoryInfo_ViewportSizeInverse;
 	float2 Jitteruv;
-	Jitteruv.x = clamp(Hruv.x + InputJitter.x * HistoryInfo_ViewportSizeInverse.x, 0.0f, 1.0f);
-	Jitteruv.y = clamp(Hruv.y + InputJitter.y * HistoryInfo_ViewportSizeInverse.y, 0.0f, 1.0f);
+	Jitteruv.x = clamp(Hruv.x + InputJitter.x * InputInfo_ViewportSizeInverse.x, 0.0f, 1.0f);
+	Jitteruv.y = clamp(Hruv.y + InputJitter.y * InputInfo_ViewportSizeInverse.y, 0.0f, 1.0f);
 	int2 InputPos = Jitteruv * InputInfo_ViewportSize;
 
 	float4 mda = MotionDepthClipAlphaBuffer.SampleLevel(LinearClamp1, Jitteruv, 0).xyzw;
