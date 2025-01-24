@@ -53,8 +53,8 @@ void MainPS(noperspective float4 UVAndScreenPos : TEXCOORD0, float4 SvPosition :
     //Prepare UV
     float2 Hruv = SvPosition.xy * OutputInfo_ViewportSizeInverse;
     float2 Jitteruv;
-    Jitteruv.x = saturate(Hruv.x + InputJitter.x * OutputInfo_ViewportSizeInverse.x);
-    Jitteruv.y = saturate(Hruv.y + InputJitter.y * OutputInfo_ViewportSizeInverse.y);
+    Jitteruv.x = saturate(Hruv.x + InputJitter.x * InputInfo_ViewportSizeInverse.x);
+    Jitteruv.y = saturate(Hruv.y + InputJitter.y * InputInfo_ViewportSizeInverse.y);
     
     int2 InputPos = int2(Hruv * InputInfo_ViewportSize);
     half3 mda = half3(MotionDepthClipAlphaBuffer.SampleLevel(LinearClamp1, Jitteruv, 0).xyz);
