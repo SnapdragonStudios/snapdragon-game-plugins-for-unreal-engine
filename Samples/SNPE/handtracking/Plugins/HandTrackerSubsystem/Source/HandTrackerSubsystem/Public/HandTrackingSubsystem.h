@@ -28,6 +28,8 @@ private:
 	const int kNumTrackers = 21;
 	TArray<UE::NNE::FTensorBindingCPU> InputBinding;
 	TArray<TArray<float>> outputs;
+	int accOutputIndex = -1;
+	int landmarkOutputIndex = -1;
 	TArray<UE::NNE::FTensorBindingCPU> OutputBinding;
 
 	TArray<FColor> tmpColorData;

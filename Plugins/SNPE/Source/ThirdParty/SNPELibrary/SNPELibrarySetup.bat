@@ -22,6 +22,7 @@
 set SNPE_SDK_ROOT=%1
 
 set SNPE_LIBRARY_ROOT=.
+set SNPE_PLUGIN_ROOT=..\..\..
 
 echo SNPE SDK installed at: %SNPE_SDK_ROOT%
 
@@ -31,10 +32,24 @@ xcopy %SNPE_SDK_ROOT%\include\SNPE %SNPE_LIBRARY_ROOT%\inc /E
 
 echo Setting up libraries...
 md %SNPE_LIBRARY_ROOT%\lib
+md %SNPE_PLUGIN_ROOT%\Binaries
+md %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty
+md %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE
 
-md %SNPE_LIBRARY_ROOT%\lib\x86_64-windows-msvc
-copy %SNPE_SDK_ROOT%\lib\x86_64-windows-msvc\SNPE.lib %SNPE_LIBRARY_ROOT%\lib\x86_64-windows-msvc
-copy %SNPE_SDK_ROOT%\lib\x86_64-windows-msvc\SNPE.dll %SNPE_LIBRARY_ROOT%\lib\x86_64-windows-msvc
+md %SNPE_LIBRARY_ROOT%\lib\x64
+md %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE\x64
+copy %SNPE_SDK_ROOT%\lib\x86_64-windows-msvc\SNPE.lib %SNPE_LIBRARY_ROOT%\lib\x64
+copy %SNPE_SDK_ROOT%\lib\x86_64-windows-msvc\SNPE.dll %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE\x64
+
+md %SNPE_LIBRARY_ROOT%\lib\Arm64
+md %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE\Arm64
+copy %SNPE_SDK_ROOT%\lib\aarch64-windows-msvc\*.lib %SNPE_LIBRARY_ROOT%\lib\Arm64
+copy %SNPE_SDK_ROOT%\lib\aarch64-windows-msvc\*.dll %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE\Arm64
+copy %SNPE_SDK_ROOT%\lib\hexagon-v68\unsigned\libSnpeHtpV??Skel.so %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE\Arm64
+copy %SNPE_SDK_ROOT%\lib\hexagon-v69\unsigned\libSnpeHtpV??Skel.so %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE\Arm64
+copy %SNPE_SDK_ROOT%\lib\hexagon-v73\unsigned\libSnpeHtpV??Skel.so %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE\Arm64
+copy %SNPE_SDK_ROOT%\lib\hexagon-v75\unsigned\libSnpeHtpV??Skel.so %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE\Arm64
+copy %SNPE_SDK_ROOT%\lib\hexagon-v79\unsigned\libSnpeHtpV??Skel.so %SNPE_PLUGIN_ROOT%\Binaries\ThirdParty\SNPE\Arm64
 
 md %SNPE_LIBRARY_ROOT%\lib\android
 copy %SNPE_SDK_ROOT%\lib\android\snpe-release.aar %SNPE_LIBRARY_ROOT%\lib\android

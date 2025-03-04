@@ -129,9 +129,9 @@ Next you will need to call a function to initialize the input tensor shape. The 
 ModelInstance->SetInputTensorShapes(ModelInstance->GetInputTensorShapes());
 ```
 
-With NNE the actual data input and output is feed via Input and Output bindings which contains pointer to the actual data memory area. So next you will need to initialize the input and output data buffers and allocate the memory for the input and output data, that you will pass as parameters to the inference function later on.
+With NNE the actual data input and output is feed via Input and Output bindings which contains pointer to the actual data memory area. So next you will need to initialize the input and output data buffers and allocate the memory for the input and output data, that you will pass as parameters to the inference function later on. These will be passed to the inference function via NNE input and output bindings.
 
-First initialize the memory for the input data:
+First initialize the memory for the input data and set up the input bindings:
 
 ```cpp
 // allocate image buffers
@@ -139,37 +139,49 @@ First initialize the memory for the input data:
 tmpColorData.SetNum(kImageSize * kImageSize);
 // planar format
 rawPixels.SetNum(kImageSize * kImageSize * 3);
-```
-
-Next the memory for the Output data:
-
-```cpp
-// allocate output buffers
-// 3 outputs - accuracy, handedness, tracker positions
-outputs.SetNum(3);
-// accuracy
-outputs[0].SetNum(1);
-// left/right
-outputs[1].SetNum(1);
-// trackers xyz
-outputs[2].SetNum(kNumTrackers * 3);
-// 
-trackers.SetNum(kNumTrackers);
-``` 
-
-And finally, you will initialize the input and output data bindings that you will pass to the inference function:
-
-```cpp
-//setup output bindings
-OutputBinding = {
-	{.Data = outputs[0].GetData(), .SizeInBytes = 1 * sizeof(float)},
-	{.Data = outputs[1].GetData(), .SizeInBytes = 1 * sizeof(float)},
-	{.Data = outputs[2].GetData(), .SizeInBytes = kNumTrackers * 3 * sizeof(float)}
-};
 
 //setup input bindings
 InputBinding.SetNum(1);
 InputBinding[0] = { .Data = rawPixels.GetData(), .SizeInBytes = rawPixels.Num() * sizeof(float) };
+```
+
+Next the memory and bindings for the output data:
+
+```cpp
+// allocate output buffers, setup output bindings
+const auto& OutputTensorDescs = ModelInstance->GetOutputTensorDescs();
+int NumOutputs = OutputTensorDescs.Num();
+outputs.SetNum(NumOutputs);
+OutputBinding.SetNum(NumOutputs);
+for (int OutputIndex = 0; OutputIndex < NumOutputs; ++OutputIndex)
+{
+	const auto& OutputTensorName = OutputTensorDescs[OutputIndex].GetName();
+	auto& OutputBuffer = outputs[OutputIndex];
+	auto& Binding = OutputBinding[OutputIndex];
+
+	if (OutputTensorName == "scores")
+	{
+		// accuracy
+		accOutputIndex = OutputIndex;
+		OutputBuffer.SetNum(1);
+	}
+	else if (OutputTensorName == "lr")
+	{
+		// handedness (left/right)
+		OutputBuffer.SetNum(1);
+	}
+	else if (OutputTensorName == "landmarks")
+	{
+		// trackers xyz
+		landmarkOutputIndex = OutputIndex;
+		OutputBuffer.SetNum(kNumTrackers * 3);
+	}
+
+	Binding.Data = OutputBuffer.GetData();
+	Binding.SizeInBytes = OutputBuffer.Num() * sizeof(float);
+}
+
+trackers.SetNum(kNumTrackers);
 ```
 
 In conclusion your Initialize function should look like this:
@@ -194,29 +206,45 @@ void UHandTrackingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		tmpColorData.SetNum(kImageSize * kImageSize);
 		// planar format
 		rawPixels.SetNum(kImageSize * kImageSize * 3);
-		
-		// allocate output buffers
-		// 3 outputs - accuracy, handedness, tracker positions
-		outputs.SetNum(3);
-		// accuracy
-		outputs[0].SetNum(1);
-		// left/right
-		outputs[1].SetNum(1);
-		// trackers xyz
-		outputs[2].SetNum(kNumTrackers * 3);
-		// 
-		trackers.SetNum(kNumTrackers);
-
-		//setup output bindings
-		OutputBinding = {
-			{.Data = outputs[0].GetData(), .SizeInBytes = 1 * sizeof(float)},
-			{.Data = outputs[1].GetData(), .SizeInBytes = 1 * sizeof(float)},
-			{.Data = outputs[2].GetData(), .SizeInBytes = kNumTrackers * 3 * sizeof(float)}
-		};
 
 		//setup input bindings
 		InputBinding.SetNum(1);
 		InputBinding[0] = { .Data = rawPixels.GetData(), .SizeInBytes = rawPixels.Num() * sizeof(float) };
+		
+		// allocate output buffers, setup output bindings
+		const auto& OutputTensorDescs = ModelInstance->GetOutputTensorDescs();
+		int NumOutputs = OutputTensorDescs.Num();
+		outputs.SetNum(NumOutputs);
+		OutputBinding.SetNum(NumOutputs);
+		for (int OutputIndex = 0; OutputIndex < NumOutputs; ++OutputIndex)
+		{
+			const auto& OutputTensorName = OutputTensorDescs[OutputIndex].GetName();
+			auto& OutputBuffer = outputs[OutputIndex];
+			auto& Binding = OutputBinding[OutputIndex];
+
+			if (OutputTensorName == "scores")
+			{
+				// accuracy
+				accOutputIndex = OutputIndex;
+				OutputBuffer.SetNum(1);
+			}
+			else if (OutputTensorName == "lr")
+			{
+				// handedness (left/right)
+				OutputBuffer.SetNum(1);
+			}
+			else if (OutputTensorName == "landmarks")
+			{
+				// trackers xyz
+				landmarkOutputIndex = OutputIndex;
+				OutputBuffer.SetNum(kNumTrackers * 3);
+			}
+
+			Binding.Data = OutputBuffer.GetData();
+			Binding.SizeInBytes = OutputBuffer.Num() * sizeof(float);
+		}
+
+		trackers.SetNum(kNumTrackers);
 	}
 }
 ```
@@ -238,12 +266,13 @@ if (renderTarget2D != nullptr)
 {
 	ExtractRawPixels(renderTarget2D, tmpColorData, rawPixels);
 	UE::NNE::IModelInstanceCPU::ERunSyncStatus result = ModelInstance->RunSync(InputBinding, OutputBinding);
-	accuracy = outputs[0][0];
+	accuracy = outputs[accOutputIndex][0];
 	for (int i = 0; i < kNumTrackers; i++)
 	{
-		float X = outputs[2][i * 3 + 0];
-		float Y = outputs[2][i * 3 + 1];
-		float Z = outputs[2][i * 3 + 2];
+		float X = outputs[landmarkOutputIndex][i * 3 + 0];
+		float Y = outputs[landmarkOutputIndex][i * 3 + 1];
+		float Z = outputs[landmarkOutputIndex][i * 3 + 2];
+
 		trackers[i].X = (Z);
 		trackers[i].Y = (X - 0.5f);
 		trackers[i].Z = -(Y - 0.5f);
@@ -256,12 +285,6 @@ Compile and build your project. 
 ## Running the project
 
 Open the project in the unreal editor, you can run the solution on the editor if you have a camera connected to your computer.
-
-Since unreal engine for Android compilation includes a validation of the libc++\_shared.so library dependency, as it is not longer supported in favor of libc++.so, and Qualcomm Neural Processing SDK depends on libc++\_shared.so you will need to disable this verification on the project settings - Platforms-Android SDK
-
-<img src="Media/5.png" />
-
-Disable libc++\_shared.so verification
 
 Make sure that you have the android SDK and NDK correctly specified in the Platform/Android SDK section of the properties.
 

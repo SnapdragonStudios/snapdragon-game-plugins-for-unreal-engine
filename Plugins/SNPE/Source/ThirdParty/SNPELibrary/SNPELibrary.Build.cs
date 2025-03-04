@@ -10,47 +10,57 @@ using UnrealBuildTool;
 
 public class SNPELibrary : ModuleRules
 {
-	public SNPELibrary(ReadOnlyTargetRules Target) : base(Target)
-	{
-		Type = ModuleType.External;
-		bUseRTTI = true;
-		bEnableExceptions = true;
+    public SNPELibrary(ReadOnlyTargetRules Target) : base(Target)
+    {
+        Type = ModuleType.External;
+        bUseRTTI = true;
+        bEnableExceptions = true;
 
-		// Add any macros that need to be set
-		PublicDefinitions.Add("WITH_SNPELIBRARY=1");
+        // Add any macros that need to be set
+        PublicDefinitions.Add("WITH_SNPELIBRARY=1");
 
-		// Add any include paths for the plugin
-		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "inc"));
+        // Add any include paths for the plugin
+        PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "inc"));
 
-		if (Target.Platform == UnrealTargetPlatform.Win64)
-		{
-			if (Target.WindowsPlatform.Architecture == UnrealArch.X64)
-			{
-				// Add the import library
-				PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "lib", "x86_64-windows-msvc", "SNPE.lib"));
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            string ArchDir = Target.WindowsPlatform.Architecture.ToString();
+            if (Target.WindowsPlatform.Architecture == UnrealArch.Arm64)
+            {
 
-				// Ensure that the DLL is staged along with the executable
-				RuntimeDependencies.Add("$(BinaryOutputDir)/SNPE.dll", Path.Combine(ModuleDirectory, "lib", "x86_64-windows-msvc", "SNPE.dll"));
-			}
-		}
-		else if (Target.Platform == UnrealTargetPlatform.Android)
-		{
-			string LibSNPEPath = Path.Combine(ModuleDirectory, "lib", "aarch64-android", "libSNPE.so");
-			string[] LibHtpStubPaths = new[]
-			{
-				Path.Combine(ModuleDirectory, "lib", "aarch64-android", "libSnpeHtpV68Stub.so"),
-				Path.Combine(ModuleDirectory, "lib", "aarch64-android", "libSnpeHtpV69Stub.so"),
-				Path.Combine(ModuleDirectory, "lib", "aarch64-android", "libSnpeHtpV73Stub.so"),
-				Path.Combine(ModuleDirectory, "lib", "aarch64-android", "libSnpeHtpV75Stub.so"),
-			};
-			string LibHtpPreparePath = Path.Combine(ModuleDirectory, "lib", "aarch64-android", "libSnpeHtpPrepare.so");
+                // Add the import library
+                PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "lib", "Arm64", "SNPE.lib"));
 
-			PublicAdditionalLibraries.Add(LibSNPEPath);
-			PublicAdditionalLibraries.AddRange(LibHtpStubPaths);
-			PublicAdditionalLibraries.Add(LibHtpPreparePath);
+                // Delay-load the DLL, so we can load it from the right place first
+                PublicDelayLoadDLLs.Add("SNPE.dll");
 
-			AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(ModuleDirectory, "SNPEPropertiesForReceipt.xml"));
+                // Ensure that the DLL is staged along with the executable
+                RuntimeDependencies.Add("$(PluginDir)/Binaries/ThirdParty/SNPE/Arm64/SNPE.dll");
+                RuntimeDependencies.Add("$(PluginDir)/Binaries/ThirdParty/SNPE/Arm64/SnpeHtpPrepare.dll");
+                RuntimeDependencies.Add("$(PluginDir)/Binaries/ThirdParty/SNPE/Arm64/SnpeHtpV68Stub.dll");
+                RuntimeDependencies.Add("$(PluginDir)/Binaries/ThirdParty/SNPE/Arm64/SnpeHtpV73Stub.dll");
+                RuntimeDependencies.Add("$(PluginDir)/Binaries/ThirdParty/SNPE/Arm64/libSnpeHtpV68Skel.so");
+                RuntimeDependencies.Add("$(PluginDir)/Binaries/ThirdParty/SNPE/Arm64/libSnpeHtpV73Skel.so");
+            }
+            else//if (Target.WindowsPlatform.Architecture == UnrealArch.X64)
+            {
+                // Add the import library
+                PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "lib", "x64", "SNPE.lib"));
 
-		}
-	}
+                // Delay-load the DLL, so we can load it from the right place first
+                PublicDelayLoadDLLs.Add("SNPE.dll");
+
+                // Ensure that the DLL is staged along with the executable
+                RuntimeDependencies.Add("$(PluginDir)/Binaries/ThirdParty/SNPE/x64/SNPE.dll");
+            }
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+            string LibSNPEPath = Path.Combine(ModuleDirectory, "lib", "aarch64-android", "libSNPE.so");
+            PublicAdditionalLibraries.Add(LibSNPEPath);
+
+            AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(ModuleDirectory, "SNPEPropertiesForReceipt.xml"));
+
+        }
+    }
 }

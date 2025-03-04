@@ -13,6 +13,12 @@
 #include "CoreMinimal.h"
 #include "NNE.h"
 
+#include "Modules/ModuleManager.h"
+#include "Interfaces/IPluginManager.h"
+#include "Misc/Paths.h"
+#include "HAL/PlatformProcess.h"
+
+
 THIRD_PARTY_INCLUDES_START
 
 #include "DlSystem/DlEnums.hpp"
@@ -33,16 +39,33 @@ static FString GetAndroidNativeLibraryDir();
 
 #endif // PLATFORM_ANDROID
 
-
-
 void FNNERuntimeSNPEModule::StartupModule()
 {
 #if PLATFORM_ANDROID
 	SetupEnvironmentForSNPE();
 #endif // PLATFORM_ANDROID
 
+	{// load library
+		FString BaseDir = IPluginManager::Get().FindPlugin("NNERuntimeSNPE")->GetBaseDir();
+		// Add on the relative location of the third party dll and load it
+		FString LibraryPath;
+		#if PLATFORM_WINDOWS
+			#if defined (_M_ARM64)
+				LibraryPath = FPaths::Combine(*BaseDir, TEXT("/Binaries/ThirdParty/SNPE/Arm64/SNPE.dll"));
+			#else 
+				LibraryPath = FPaths::Combine(*BaseDir, TEXT("/Binaries/ThirdParty/SNPE/x64/SNPE.dll"));
+			#endif
+			LibraryHandle = !LibraryPath.IsEmpty() ? FPlatformProcess::GetDllHandle(*LibraryPath) : nullptr;
+			if (LibraryHandle == nullptr)
+			{
+				UE_LOG(LogNNE, Error, TEXT("Failed to load SNPE third party library"));
+			}
+		#endif
+	}
+
 	zdl::SNPE::SNPEFactory::initializeLogging(zdl::DlSystem::LogLevel_t::LOG_INFO);
 
+	// Create Instance & Register
 	NNERuntimeSNPE = NewObject<UNNERuntimeSNPE>();
 	if (NNERuntimeSNPE.IsValid())
 	{
@@ -59,6 +82,14 @@ void FNNERuntimeSNPEModule::ShutdownModule()
 		NNERuntimeSNPE->RemoveFromRoot();
 		NNERuntimeSNPE.Reset();
 	}
+
+	// Free the dll handle
+	if(LibraryHandle != nullptr)
+	{
+		FPlatformProcess::FreeDllHandle(LibraryHandle);
+		LibraryHandle = nullptr;
+	}
+
 }
 
 #if PLATFORM_ANDROID

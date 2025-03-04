@@ -25,9 +25,9 @@ static void ExtractRawPixels(UTextureRenderTarget2D* renderTarget, TArray<FColor
 	// planar
 	for (int i = 0; i < numPixels; i++)
 	{
-		rawPixels[i + numPixels * 0] = tmpColorData[i].R / 255.0f;
-		rawPixels[i + numPixels * 1] = tmpColorData[i].G / 255.0f;
-		rawPixels[i + numPixels * 2] = tmpColorData[i].B / 255.0f;
+		rawPixels[3 * i + 0] = tmpColorData[i].R / 255.0f;
+		rawPixels[3 * i + 1] = tmpColorData[i].G / 255.0f;
+		rawPixels[3 * i + 2] = tmpColorData[i].B / 255.0f;
 	}
 }
 
@@ -52,29 +52,45 @@ void UHandTrackingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		tmpColorData.SetNum(kImageSize * kImageSize);
 		// planar format
 		rawPixels.SetNum(kImageSize * kImageSize * 3);
-		
-		// allocate output buffers
-		// 3 outputs - accuracy, handedness, tracker positions
-		outputs.SetNum(3);
-		// accuracy
-		outputs[0].SetNum(1);
-		// left/right
-		outputs[1].SetNum(1);
-		// trackers xyz
-		outputs[2].SetNum(kNumTrackers * 3);
-		// 
-		trackers.SetNum(kNumTrackers);
-
-		//setup output bindings
-		OutputBinding = {
-			{.Data = outputs[0].GetData(), .SizeInBytes = 1 * sizeof(float)},
-			{.Data = outputs[1].GetData(), .SizeInBytes = 1 * sizeof(float)},
-			{.Data = outputs[2].GetData(), .SizeInBytes = kNumTrackers * 3 * sizeof(float)}
-		};
 
 		//setup input bindings
 		InputBinding.SetNum(1);
 		InputBinding[0] = { .Data = rawPixels.GetData(), .SizeInBytes = rawPixels.Num() * sizeof(float) };
+		
+		// allocate output buffers, setup output bindings
+		const auto& OutputTensorDescs = ModelInstance->GetOutputTensorDescs();
+		int NumOutputs = OutputTensorDescs.Num();
+		outputs.SetNum(NumOutputs);
+		OutputBinding.SetNum(NumOutputs);
+		for (int OutputIndex = 0; OutputIndex < NumOutputs; ++OutputIndex)
+		{
+			const auto& OutputTensorName = OutputTensorDescs[OutputIndex].GetName();
+			auto& OutputBuffer = outputs[OutputIndex];
+			auto& Binding = OutputBinding[OutputIndex];
+
+			if (OutputTensorName == "scores")
+			{
+				// accuracy
+				accOutputIndex = OutputIndex;
+				OutputBuffer.SetNum(1);
+			}
+			else if (OutputTensorName == "lr")
+			{
+				// handedness (left/right)
+				OutputBuffer.SetNum(1);
+			}
+			else if (OutputTensorName == "landmarks")
+			{
+				// trackers xyz
+				landmarkOutputIndex = OutputIndex;
+				OutputBuffer.SetNum(kNumTrackers * 3);
+			}
+
+			Binding.Data = OutputBuffer.GetData();
+			Binding.SizeInBytes = OutputBuffer.Num() * sizeof(float);
+		}
+
+		trackers.SetNum(kNumTrackers);
 	}
 }
 
@@ -93,12 +109,12 @@ void UHandTrackingSubsystem::Process(UTextureRenderTarget2D* renderTarget2D)
 	{
 		ExtractRawPixels(renderTarget2D, tmpColorData, rawPixels);
 		UE::NNE::IModelInstanceCPU::ERunSyncStatus result = ModelInstance->RunSync(InputBinding, OutputBinding);
-		accuracy = outputs[0][0];
+		accuracy = outputs[accOutputIndex][0];
 		for (int i = 0; i < kNumTrackers; i++)
 		{
-			float X = outputs[2][i * 3 + 0];
-			float Y = outputs[2][i * 3 + 1];
-			float Z = outputs[2][i * 3 + 2];
+			float X = outputs[landmarkOutputIndex][i * 3 + 0];
+			float Y = outputs[landmarkOutputIndex][i * 3 + 1];
+			float Z = outputs[landmarkOutputIndex][i * 3 + 2];
 
 			trackers[i].X = (Z);
 			trackers[i].Y = (X - 0.5f);

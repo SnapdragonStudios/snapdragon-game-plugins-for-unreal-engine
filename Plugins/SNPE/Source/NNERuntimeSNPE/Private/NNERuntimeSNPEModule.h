@@ -22,4 +22,5 @@ public:
 
 private:
 	TWeakObjectPtr<UNNERuntimeSNPE> NNERuntimeSNPE;
+	void* LibraryHandle = nullptr;
 };
