@@ -1,7 +1,7 @@
 //============================================================================================================
 //
 //
-//                  Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+//                  Copyright (c) 2025, Qualcomm Innovation Center, Inc. All rights reserved.
 //                              SPDX-License-Identifier: BSD-3-Clause
 //
 //============================================================================================================
@@ -39,10 +39,10 @@ float DecodeColorY(uint sample32)
 void Activate(uint2 DisThreadID)
 {
 	const int2 sampleOffset[4] = {
-		int2(-1, -1),
-		int2(-1, +0),
-		int2(+0, -1),
-		int2(+0, +0),
+		int2(0, 0),
+		int2(0, 1),
+		int2(1, 0),
+		int2(1, 1),
 	};
 
 	float2 ViewportUV = (float2(DisThreadID) + 0.5f) * InputInfo_ViewportSizeInverse;
@@ -92,8 +92,8 @@ void Activate(uint2 DisThreadID)
 			float weight = Bilinweights[index];
 			Wdepth += saturate(Depthsep / (abs(fPrevdepth - depth) + EPSILON)) * weight;
 
-			float2 gPrevdepth2 = MotionDepthAlphaBuffer.GatherBlue(PointClamp2, PrevUV, sampleOffset[index + 1]).zw;
-			fPrevdepth = max(max(frac(gPrevdepth2.x), frac(gPrevdepth2.y)), tdepth2);
+			float2 gPrevdepth2 = MotionDepthAlphaBuffer.GatherBlue(PointClamp2, PrevUV, sampleOffset[index + 1]).xy;
+			fPrevdepth = max(max(frac(gPrevdepth2.x), frac(gPrevdepth2.y)), tdepth1);
 			Depthsep = Ksep_Kfov_diagonal * max(fPrevdepth, depth);
 			weight = Bilinweights[index + 1];
 			Wdepth += saturate(Depthsep / (abs(fPrevdepth - depth) + EPSILON)) * weight;
