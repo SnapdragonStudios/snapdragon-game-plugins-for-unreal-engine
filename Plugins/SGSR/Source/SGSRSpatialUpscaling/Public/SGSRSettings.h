@@ -8,23 +8,7 @@
 #pragma once
 #include "SGSRSettings.generated.h"
 
-
-//#SGSR_TARGET_Definitions
-UENUM()
-enum ESGSRTarget
-{
-    SGSR_TARGET_MOBILE UMETA(DisplayName = "Mobile"),
-    SGSR_TARGET_HIGH_QUALITY UMETA(DisplayName = "High Quality"),
-    SGSR_TARGET_VR UMETA(DisplayName = "Virtual Reality"),
-    SGSR_MAX,
-};
-
-
-#if ENGINE_MAJOR_VERSION >= 5
-#define SGSR_HALF_PRECISION_SUPPORTED 1
-#endif
 #define SGSR_CVAR_NAME_HALF_PRECISION "r.Qualcomm.SGSR.HalfPrecision"
-
 #define SGSR_CVAR_NAME_TARGET "r.Qualcomm.SGSR.Target"
 
 UCLASS(config = Game, defaultconfig, meta = (DisplayName = "Rendering"))
@@ -43,7 +27,7 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Snapdragon Game Super Resolution Settings", meta = (
         ConsoleVariable = "r.Qualcomm.SGSR.Target", DisplayName = "Target Algorithm Variant",
         ToolTip = "Selects shader variant; different variants are intended for different kinds of games."))
-        TEnumAsByte<ESGSRTarget> Target;
+        uint8 Target;
 
 #if WITH_EDITOR
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override final;

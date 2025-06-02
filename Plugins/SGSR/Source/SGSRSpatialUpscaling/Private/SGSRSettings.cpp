@@ -7,9 +7,7 @@
 //============================================================================================================
 #include "SGSRSettings.h"
 #include "LogSGSR.h"
-#if (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1 && ENGINE_PATCH_VERSION >= 1)
 #include "Misc/ConfigUtilities.h"
-#endif
 
 void HalfPrecisionCVarSetToFalse(IConsoleVariable* const Var)
 {
@@ -39,19 +37,8 @@ USGSR_Settings::USGSR_Settings(const FObjectInitializer& obj)
     Super::PostInitProperties();
 
     const TCHAR* const iniSettingsString = TEXT("/Script/SGSRSpatialUpscaling.SGSR_Settings");
-#if (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1 && ENGINE_PATCH_VERSION >= 1)
-    UE::ConfigUtilities::
-#endif
-	ApplyCVarSettingsFromIni(iniSettingsString, *GEngineIni, ECVF_SetByProjectSetting);
-
-#if (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1 && ENGINE_PATCH_VERSION >= 1)
-	UE::ConfigUtilities::
-#endif
-	ApplyCVarSettingsFromIni(iniSettingsString, *GGameIni, ECVF_SetByProjectSetting);
-
-#if !defined(SGSR_HALF_PRECISION_SUPPORTED)
-	HalfPrecisionCVarSetToFalse(IConsoleManager::Get().FindConsoleVariable(TEXT(SGSR_CVAR_NAME_HALF_PRECISION)));
-#endif
+    UE::ConfigUtilities::ApplyCVarSettingsFromIni(iniSettingsString, *GEngineIni, ECVF_SetByProjectSetting);
+    UE::ConfigUtilities::ApplyCVarSettingsFromIni(iniSettingsString, *GGameIni, ECVF_SetByProjectSetting);
 }
 
 #if WITH_EDITOR

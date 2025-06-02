@@ -6,10 +6,13 @@
 //
 //============================================================================================================
 #include "SGSRSubpassScaler.h"
-#if (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2)
 #include "DataDrivenShaderPlatformInfo.h"
-#endif
+#include "LogSGSR.h"
+#include "SceneRendering.h"
 #include "SGSRSettings.h"
+
+#define SGSR_CPU_CONFIG
+#include "../Shaders/Private/sgsr.ush"
 
 //#SGSR_TARGET_Definitions
 static TAutoConsoleVariable<int32> SGSR_TargetCVar(
@@ -22,12 +25,7 @@ static TAutoConsoleVariable<int32> SGSR_TargetCVar(
 
 static TAutoConsoleVariable<bool> SGSR_HalfPrecisionCVar(
     TEXT(SGSR_CVAR_NAME_HALF_PRECISION),
-#if defined SGSR_HALF_PRECISION_SUPPORTED
-    1 //half-precision often speeds processing time with little or no additional noticeable artifacts
-#else
-	0
-#endif
-	,
+    1, //half-precision often speeds processing time with little or no additional noticeable artifacts
     TEXT("If 1, use 16-bit precision for many SGSR operations.  Available only as of UE5.0.0; UE4 does not support half-precision in shader code"),
     ECVF_RenderThreadSafe
 );
@@ -54,14 +52,6 @@ public:
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
 	{
         //it doesn't make sense for this case, but we could prevent certain permutations from being cooked like so:
-#if !defined(SGSR_HALF_PRECISION_SUPPORTED)
-		FPermutationDomain PermutationVector(Parameters.PermutationId);
-        if (PermutationVector.Get<FSGSR_HalfPrecision>())
-        {
-            return false;
-        }
-#endif
-
 		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5)|| IsMobilePlatform(Parameters.Platform);
 	}
 
@@ -74,9 +64,6 @@ void FSGSRSubpassScaler::ParseEnvironment(FRDGBuilder& GraphBuilder, const FView
 
 void OnChange_SGSR_HalfPrecisionCVar(IConsoleVariable* Var)
 {
-#if !defined(SGSR_HALF_PRECISION_SUPPORTED)
-	HalfPrecisionCVarSetToFalse(Var);
-#endif
 }
 
 static bool inline SgsrTargetValueValid(const int32 SgsrTargetValue)
@@ -115,6 +102,16 @@ void FSGSRSubpassScaler::CreateResources(FRDGBuilder& GraphBuilder, const FViewI
 	Data->OutputViewport = FScreenPassTextureViewport(Data->UpscaleTexture);
 	Data->InputViewport = FScreenPassTextureViewport(PassInputs.SceneColor);
 	Data->bSGSREnabled = (Data->InputViewport.Rect != Data->OutputViewport.Rect);
+	
+	if(IsMobilePlatform(GShaderPlatformForFeatureLevel[GMaxRHIFeatureLevel]))
+	{ 
+		/*	To ensure the pass is fully constructed when used in the mobile renderer, perform this operation to mirror bShouldPrimaryUpscale in:
+			void AddMobilePostProcessingPasses(FRDGBuilder& GraphBuilder, FScene* Scene, const FViewInfo& View, FSceneUniformBuffer &SceneUniformBuffer, const FMobilePostProcessingInputs& Inputs, FInstanceCullingManager& InstanceCullingManager)
+			
+			The desktop renderer does not perform this operation
+		*/
+		Data->bSGSREnabled |= View.Family->GetPrimarySpatialUpscalerInterface() != nullptr;
+	}
 }
 
 void FSGSRSubpassScaler::Upscale(FRDGBuilder& GraphBuilder, const FViewInfo& View, const FInputs& PassInputs)

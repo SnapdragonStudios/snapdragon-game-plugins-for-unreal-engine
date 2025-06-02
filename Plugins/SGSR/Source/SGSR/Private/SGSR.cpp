@@ -13,10 +13,6 @@
 #include "ISettingsModule.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-#define UE4_SUPPORT ((ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION == 27 && ENGINE_PATCH_VERSION >= 1) || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 27))
-#define UE5_SUPPORT  (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 0  && ENGINE_PATCH_VERSION >= 0)
-static_assert(UE4_SUPPORT || UE5_SUPPORT, "SGSR plugin requires UE4.27.1 or greater.");
-
 // DUPLICATED FROM UNREALENGINE.CPP
 /** Special function that loads an engine texture and adds it to root set in cooked builds.
   * This is to prevent the textures from being added to GC clusters (root set objects are not clustered)

@@ -7,6 +7,7 @@
 //============================================================================================================
 #include "SGSRSpatialUpscaler.h"
 
+#include "SceneRendering.h"
 #include "Subpasses/SGSRSubpassFirst.h"
 #include "Subpasses/SGSRSubpassScaler.h"
 #include "Subpasses/SGSRSubpassLast.h"

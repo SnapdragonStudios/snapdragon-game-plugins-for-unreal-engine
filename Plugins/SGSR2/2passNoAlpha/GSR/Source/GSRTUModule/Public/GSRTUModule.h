@@ -13,6 +13,7 @@
 
 class FGSRTU;
 // class ITemporalUpscaler;
+using IGSRTemporalUpscaler = UE::Renderer::Private::ITemporalUpscaler;
 
 class FGSRTUModule final : public IModuleInterface
 {

@@ -6,6 +6,7 @@
 //
 //============================================================================================================
 #include "SGSRSubpassFirst.h"
+#include "SceneRendering.h"
 
 void FSGSRSubpassFirst::CreateResources(FRDGBuilder& GraphBuilder, const FViewInfo& View, const FInputs& PassInputs)
 {
