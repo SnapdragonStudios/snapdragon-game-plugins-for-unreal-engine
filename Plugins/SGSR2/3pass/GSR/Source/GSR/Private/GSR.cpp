@@ -11,7 +11,7 @@
 
 #include "Runtime/Launch/Resources/Version.h"
 
-static_assert((ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 4 && ENGINE_PATCH_VERSION >= 0), "GSR plugin requires UE5.4.x");
+static_assert((ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 5 && ENGINE_PATCH_VERSION >= 0), "GSR plugin requires UE5.5.x");
 
 IMPLEMENT_MODULE(FGSRModule, GSR)
 

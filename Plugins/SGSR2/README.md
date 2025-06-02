@@ -1,13 +1,13 @@
 # SGSR2.0 UE Plugin
 UE Plugin for Snapdragon Game Super Resolution 2.0
 
-## Build SGSR2.0 in UE5.4
-This release contains three versions of SGSR2 (3pass, 3passNoAlpha, 2passNoAlpha).<br/>
+## Build SGSR2.0 in UE5.5
+This release contains two versions of SGSR2 (3pass, 2passNoAlpha).<br/>
 *1) Push subfolder "GSR" of any version of SGSR2 into folder "Plugins" of UE5 engine source code(Engine\Plugins\Runtime\Qualcomm), or project plugin folder. <br/>
 *2) Build the engine or project.<br/>
 
 
-## Enable SGSR2.0 in UE5.4
+## Enable SGSR2.0 in UE5.5
 In UE5 Editor:
 ```
 In "Project Settings" tab, apply following configs
@@ -66,11 +66,11 @@ r.MobileContentScaleFactor=0,r.DefaultFeature.AntiAliasing=2,r.TemporalAA.Upsamp
 If storage permissions required, intall .apk through Install_[PROJECT]-arm64.bat or enter the following code:
 ```
 adb shell pm grant com.YourCompany.[PROJECT] android.permission.READ_EXTERNAL_STORAGE
-adb shell pm grant com.YourCompany.[PROJECT]android.permission.WRITE_EXTERNAL_STORAGE
+adb shell pm grant com.YourCompany.[PROJECT] android.permission.WRITE_EXTERNAL_STORAGE
 ```
 
-## Build Andriod for UE5.4 (workable solution)
-- Apply patch, refer to UE5.4.patch
+## Build Andriod for UE5.5 (workable solution)
+- Apply patch, refer to UE5.5.patch
 - SDK: 33.0.3
 - NDK: 25.1.8937393
 - JRE: Java 17

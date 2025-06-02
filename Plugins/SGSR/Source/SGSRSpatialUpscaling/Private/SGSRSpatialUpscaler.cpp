@@ -53,7 +53,7 @@ FScreenPassTexture FSGSRSpatialUpscaler::AddPasses(FRDGBuilder& GraphBuilder, co
 			? EUpscaleMethod::SmoothStep
 			: EUpscaleMethod::Nearest;
 
-		return ISpatialUpscaler::AddDefaultUpscalePass(GraphBuilder, View, PassInputs, Method, FPaniniProjectionConfig());
+		return ISpatialUpscaler::AddDefaultUpscalePass(GraphBuilder, View, PassInputs, Method, FLensDistortionLUT());
 	}
 
 	TSharedPtr<FSGSRData> Data = GetDataForView(View);

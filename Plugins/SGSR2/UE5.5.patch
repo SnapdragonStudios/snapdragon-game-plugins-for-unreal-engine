@@ -1,17 +1,8 @@
 diff --git a/Engine/Config/BaseDeviceProfiles.ini b/Engine/Config/BaseDeviceProfiles.ini
-index 2dac5155afb..7cbdd8672b0 100644
+index 24e70afb8675..3181f812dcdb 100644
 --- a/Engine/Config/BaseDeviceProfiles.ini
 +++ b/Engine/Config/BaseDeviceProfiles.ini
-@@ -105,6 +105,8 @@
- +DeviceProfileNameAndTypes=Android_Adreno6xx_Vulkan,Android
- +DeviceProfileNameAndTypes=Android_Adreno7xx,Android
- +DeviceProfileNameAndTypes=Android_Adreno7xx_Vulkan,Android
-++DeviceProfileNameAndTypes=Android_Adreno8xx,Android
-++DeviceProfileNameAndTypes=Android_Adreno8xx_Vulkan,Android
- +DeviceProfileNameAndTypes=Android_Mali_T6xx,Android
- +DeviceProfileNameAndTypes=Android_Mali_T7xx,Android
- +DeviceProfileNameAndTypes=Android_Mali_T8xx,Android
-@@ -127,7 +129,8 @@
+@@ -140,7 +140,8 @@
  +DeviceProfileNameAndTypes=Android_Xclipse_xxx,Android
  +DeviceProfileNameAndTypes=Android_Xclipse_xxx_Vulkan,Android
  +DeviceProfileNameAndTypes=Android_Vulkan_SM5,Android
@@ -21,27 +12,17 @@ index 2dac5155afb..7cbdd8672b0 100644
  +DeviceProfileNameAndTypes=Android_Mali_Vulkan_SM5,Android
  +DeviceProfileNameAndTypes=Android_Xclipse_Vulkan_SM5,Android
  +DeviceProfileNameAndTypes=Android_PowerVR_G6xxx,Android
-@@ -731,7 +734,8 @@ BaseProfileName=VisionPro
+@@ -787,7 +788,8 @@ BaseProfileName=VisionPro
  +MatchProfile=(Profile="Android_Adreno5xx_Low",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 5[0-1][0-9]")))
  +MatchProfile=(Profile="Android_Adreno5xx",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 5[0-9][0-9]")))
- ; Enable SM5 on Adreno 7xx when SM5 is enabled
--+MatchProfile=(Profile="Android_Adreno_Vulkan_SM5",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 7[0-9][0-9]"),(SourceType=SRC_AndroidVersion, CompareType=CMP_Regex,MatchString="([0-9]+).*"),(SourceType=SRC_PreviousRegexMatch,CompareType=CMP_GreaterEqual,MatchString="10"),(SourceType=SRC_SM5Available,CompareType=CMP_Equal,MatchString="true")))
+ ; Enable SM5 on Adreno 7xx and 8xx when SM5 is enabled
+-+MatchProfile=(Profile="Android_Adreno_Vulkan_SM5",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) [7-8][0-9][0-9]"),(SourceType=SRC_AndroidVersion, CompareType=CMP_Regex,MatchString="([0-9]+).*"),(SourceType=SRC_PreviousRegexMatch,CompareType=CMP_GreaterEqual,MatchString="10"),(SourceType=SRC_SM5Available,CompareType=CMP_Equal,MatchString="true")))
 ++MatchProfile=(Profile="Android_Adreno7xx_Vulkan_SM5",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 7[0-9][0-9]"),(SourceType=SRC_AndroidVersion, CompareType=CMP_Regex,MatchString="([0-9]+).*"),(SourceType=SRC_PreviousRegexMatch,CompareType=CMP_GreaterEqual,MatchString="10"),(SourceType=SRC_SM5Available,CompareType=CMP_Equal,MatchString="true")))
 ++MatchProfile=(Profile="Android_Adreno8xx_Vulkan_SM5",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 8[0-9][0-9]"),(SourceType=SRC_AndroidVersion, CompareType=CMP_Regex,MatchString="([0-9]+).*"),(SourceType=SRC_PreviousRegexMatch,CompareType=CMP_GreaterEqual,MatchString="10"),(SourceType=SRC_SM5Available,CompareType=CMP_Equal,MatchString="true")))
  ; disable Vulkan on Adreno 660 devices with driver version <= 525
  +MatchProfile=(Profile="Android_Adreno6xx",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 660"),(SourceType=SRC_GLVersion, CompareType=CMP_Regex,MatchString="V@([0-9]+)"),(SourceType=SRC_PreviousRegexMatch,CompareType=CMP_LessEqual,MatchString="525")))
  ; Enable Vulkan on Adreno 6xx devices with Android >= 10 and driver version >= 400
-@@ -740,6 +744,9 @@ BaseProfileName=VisionPro
- ; Enable Vulkan on Adreno 7xx devices with Android >= 10
- +MatchProfile=(Profile="Android_Adreno7xx_Vulkan",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 7[0-9][0-9]"),(SourceType=SRC_AndroidVersion, CompareType=CMP_Regex,MatchString="([0-9]+).*"),(SourceType=SRC_PreviousRegexMatch,CompareType=CMP_GreaterEqual,MatchString="10"),(SourceType=SRC_VulkanAvailable,CompareType=CMP_Equal,MatchString="true")))
- +MatchProfile=(Profile="Android_Adreno7xx",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 7[0-9][0-9]")))
-+; Enable Vulkan on Adreno 8xx devices with Android >= 10
-++MatchProfile=(Profile="Android_Adreno8xx_Vulkan",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 8[0-9][0-9]"),(SourceType=SRC_AndroidVersion, CompareType=CMP_Regex,MatchString="([0-9]+).*"),(SourceType=SRC_PreviousRegexMatch,CompareType=CMP_GreaterEqual,MatchString="10"),(SourceType=SRC_VulkanAvailable,CompareType=CMP_Equal,MatchString="true")))
-++MatchProfile=(Profile="Android_Adreno8xx",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno \\(TM\\) 8[0-9][0-9]")))
- ; Enable Vulkan on any unknown Adreno running Android 10 or later
- +MatchProfile=(Profile="Android_Unknown_Vulkan",Match=((SourceType=SRC_GpuFamily,CompareType=CMP_Regex,MatchString="Adreno"),(SourceType=SRC_AndroidVersion, CompareType=CMP_Regex,MatchString="([0-9]+).*"),(SourceType=SRC_PreviousRegexMatch,CompareType=CMP_GreaterEqual,MatchString="10"),(SourceType=SRC_VulkanAvailable,CompareType=CMP_Equal,MatchString="true")))
- 
-@@ -881,7 +888,7 @@ BaseProfileName=Android_Mid
+@@ -947,7 +949,7 @@ BaseProfileName=Android_Mid
  DeviceType=Android
  BaseProfileName=Android
  +CVars=sg.ViewDistanceQuality=2
@@ -50,7 +31,7 @@ index 2dac5155afb..7cbdd8672b0 100644
  +CVars=sg.ShadowQuality=2
  +CVars=sg.GlobalIlluminationQuality=2
  +CVars=sg.ReflectionQuality=2
-@@ -902,7 +909,7 @@ BaseProfileName=Android
+@@ -968,7 +970,7 @@ BaseProfileName=Android
  +CVars=r.Shadow.MaxNumSpotShadowCacheUpdatesPerFrame=1
  +CVars=r.Shadow.DistanceScale=1.0
  +CVars=r.Shadow.CSM.MaxCascades=2 
@@ -59,9 +40,9 @@ index 2dac5155afb..7cbdd8672b0 100644
  +CVars=r.Shadow.CSMShadowDistanceFadeoutMultiplier=2.5
  +CVars=r.SSS.Quality=0
  +CVars=r.SSS.Scale=0
-@@ -914,7 +921,11 @@ BaseProfileName=Android
- +CVars=r.Vulkan.RayTracing.TLASPreferFastTraceTLAS=0
- +CVars=r.RayTracing.RequireSM6=0
+@@ -984,7 +986,11 @@ DeviceType=Android
+ BaseProfileName=Android
+ +CVars=r.Lumen.HardwareRayTracing=False
  
 -[Android_Adreno_Vulkan_SM5 DeviceProfile]
 +[Android_Adreno7xx_Vulkan_SM5 DeviceProfile]
@@ -72,7 +53,7 @@ index 2dac5155afb..7cbdd8672b0 100644
  DeviceType=Android
  BaseProfileName=Android_Vulkan_SM5
  
-@@ -965,6 +976,16 @@ BaseProfileName=Android_Adreno7xx
+@@ -1045,6 +1051,16 @@ BaseProfileName=Android_Adreno8xx
  ; enable Vulkan
  +CVars=r.Android.DisableVulkanSupport=0
  
@@ -90,12 +71,12 @@ index 2dac5155afb..7cbdd8672b0 100644
  ; Xclipse devices
  
 diff --git a/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp b/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp
-index 92997564f8f..155fee2ec6a 100644
+index e9dab8b3f56d..95a2c0bb799a 100644
 --- a/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp
 +++ b/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp
-@@ -592,7 +592,7 @@ public:
+@@ -642,7 +642,7 @@ class FSetupExposureIlluminanceCS : public FGlobalShader
  
- 		static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+ 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
  	{
 -		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
 +		return true;
