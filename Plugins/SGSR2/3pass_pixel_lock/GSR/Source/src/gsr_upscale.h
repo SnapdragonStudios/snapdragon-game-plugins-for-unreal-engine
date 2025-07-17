@@ -81,7 +81,7 @@ void UpdateLockStatus(half fDepthClipFactor, half fAccumulationMask,
 	out half fLockContributionThisFrame,
 	half fLuminanceDiff)
 {
-	if (fLockStatus < 1.9999)  //if not a new lock
+	if (fLockStatus < 1.999)  //if not a new lock
 	{
 		fLockStatus *= half(fLuminanceDiff > 0.4);
 	}
