@@ -103,20 +103,19 @@ float2 OutputInfo_UVViewportBilinearMax;
 
 //Functions related to color space conversion
 half3 Tonemap(half3 fRgb){
-	return fRgb / (max(max(half(0.0), fRgb.r), max(fRgb.g, fRgb.b)) + half(1.0)).xxx;
+    return fRgb / (max(max(half(0.0), fRgb.r), max(fRgb.g, fRgb.b)) + half(1.0)).xxx;
 }
 
 half3 InverseTonemap(half3 fRgb){
-	return fRgb / max(FLT_FP16_MIN/*fp16 inf fix*/, 1.0 - max(fRgb.r, max(fRgb.g, fRgb.b))).xxx;
+    return fRgb / max(FLT_FP16_MIN/*fp16 inf fix*/, 1.0 - max(fRgb.r, max(fRgb.g, fRgb.b))).xxx;
 }
 
 half3 RGBToYCoCg(half3 fRgb){
-	half3 fYCoCg;
-	fYCoCg = half3(
-					0.25*fRgb.r+0.5*fRgb.g+0.25*fRgb.b,
-					0.5*fRgb.r-0.5*fRgb.b,
-					-0.25*fRgb.r+0.5*fRgb.g-0.25*fRgb.b);
-	return fYCoCg;
+    half3 fYCoCg;
+    fYCoCg.x = 0.25 * (fRgb.r + 2.0 * fRgb.g + fRgb.b);
+    fYCoCg.y = 0.5 * (fRgb.r - fRgb.b);
+    fYCoCg.z = fYCoCg.x + fYCoCg.y - fRgb.r;
+    return fYCoCg;
 }
 
 #if CONFIG_COMPILE_FP16
@@ -124,59 +123,56 @@ half3 RGBToYCoCg(half3 fRgb){
 half2 DecodeVelocityFromTexture(half4 InEncodedV)
 {
 #if COMPILER_GLSL_ES3_1
-	#error "COMPILER_GLSL_ES3_1 not supported"
+    #error "COMPILER_GLSL_ES3_1 not supported"
 #else
-	half4 EncodedV = InEncodedV;
+    half4 EncodedV = InEncodedV;
 #endif
-	half InvDiv = 1.0 / (0.499 * 0.5);
+    half InvDiv = 1.0 / (0.499 * 0.5);
 
-	half2 V;
-	V.xy = EncodedV.xy * InvDiv - 32767.0 / 65535.0 * InvDiv;
+    half2 V;
+    V.xy = EncodedV.xy * InvDiv - 32767.0 / 65535.0 * InvDiv;
 
 #if VELOCITY_ENCODE_GAMMA
-	V.xy = (V.xy * abs(V.xy)) * 0.5;
+    V.xy = (V.xy * abs(V.xy)) * 0.5;
 #endif
 
-	return V;
+    return V;
 }
 #endif // CONFIG_COMPILE_FP16
 
 half3 YCoCgToRGB(half3 fYCoCg){
-	half3 fRgb;
-	fRgb = half3(
-				  fYCoCg.x+fYCoCg.y-fYCoCg.z,
-				  fYCoCg.x+fYCoCg.z,
-				  fYCoCg.x-fYCoCg.y-fYCoCg.z);
-	return fRgb;
+    half3 fRgb;
+    fRgb = half3(
+        fYCoCg.x+fYCoCg.y-fYCoCg.z,
+        fYCoCg.x+fYCoCg.z,
+        fYCoCg.x-fYCoCg.y-fYCoCg.z);
+    return fRgb;
 }
 
 //Functions related to coordinate calculation
 int2 ClampLoad(int2 iPxSample, int2 iPxOffset, int2 iTextureSize)
 {
-	int2 result = iPxSample + iPxOffset;
-    result.x = (iPxOffset.x < 0) ? max(result.x, 0) : result.x;
-    result.x = (iPxOffset.x > 0) ? min(result.x, iTextureSize.x - 1) : result.x;
-    result.y = (iPxOffset.y < 0) ? max(result.y, 0) : result.y;
-    result.y = (iPxOffset.y > 0) ? min(result.y, iTextureSize.y - 1) : result.y;
-	return result;
+    int2 result = iPxSample + iPxOffset;
+    result.x = clamp(result.x, 0, iTextureSize.x - 1);
+    result.y = clamp(result.y, 0, iTextureSize.y - 1);
+    return result;
 }
 
 #if CONFIG_COMPILE_FP16
 half3 PrepareRgb(half3 fRgb, half fPreExposure)
 {
-	fRgb /= fPreExposure;
-	// fRgb *= fExposure;
+    fRgb /= fPreExposure;
+    // fRgb *= fExposure;
 
-	fRgb = clamp(fRgb, 0.0, FLT_FP16_MAX);
+    fRgb = clamp(fRgb, 0.0, FLT_FP16_MAX);
 
-	return fRgb;
+    return fRgb;
 }
 #endif // CONFIG_COMPILE_FP16
 
 float3 PrepareRgb(float3 fRgb, float fPreExposure)
 {
     fRgb /= fPreExposure;
-    //fRgb *= fExposure;
 
     fRgb = clamp(fRgb, 0.0, FLT_FP16_MAX);
 
@@ -185,7 +181,6 @@ float3 PrepareRgb(float3 fRgb, float fPreExposure)
 
 float3 UnprepareRgb(float3 fRgb, float fPreExposure)
 {
-    //fRgb /= fExposure;
     fRgb *= fPreExposure;
 
     return fRgb;
@@ -195,9 +190,9 @@ float3 UnprepareRgb(float3 fRgb, float fPreExposure)
 half3 UnprepareRgb(half3 fRgb, half fPreExposure)
 {
     //fRgb /= fExposure;
-	fRgb *= fPreExposure;
+    fRgb *= fPreExposure;
 
-	return fRgb;
+     return fRgb;
 }
 #endif // CONFIG_COMPILE_FP16
 
@@ -213,7 +208,7 @@ float2 ClampUv(float2 fUv, int2 iTextureSize, int2 iResourceSize)
 
 bool IsUvInside(float2 fUv)
 {
-	return (fUv.x >= 0.0 && fUv.x <= 1.0) && (fUv.y >= 0.0 && fUv.y <= 1.0);
+    return (fUv.x >= 0.0 && fUv.x <= 1.0) && (fUv.y >= 0.0 && fUv.y <= 1.0);
 }
 
 

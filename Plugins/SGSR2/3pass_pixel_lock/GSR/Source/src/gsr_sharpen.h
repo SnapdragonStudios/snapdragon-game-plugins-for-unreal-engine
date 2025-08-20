@@ -1,7 +1,7 @@
 Texture2D<half4> Input;
 RWTexture2D<half4> UpscaledOutput;
 float PreExposure;
-float sharpness;
+float Sharpness;
 
 #define GSR_RCAS_LIMIT (0.25-(1.0/16.0))
 
@@ -28,7 +28,7 @@ void CurrFilter(uint2 pos)
 	half3 hitMaxYCoCg = (half3(1.0, 1.0, 1.0) - max4YCoCg) * rcp(half3(4.0, 4.0, 4.0) * min4YCoCg - half3(4.0, 4.0, 4.0));
 	half3 lobeYCoCg = max(-hitMinYCoCg, hitMaxYCoCg);
 
-	half lobe = max(half(-GSR_RCAS_LIMIT), min(max3(lobeYCoCg.x, lobeYCoCg.y, lobeYCoCg.z), half(0.0))) * sharpness;
+	half lobe = max(half(-GSR_RCAS_LIMIT), min(max3(lobeYCoCg.x, lobeYCoCg.y, lobeYCoCg.z), half(0.0))) * Sharpness;
 
 	half3 e = PrepareRgb(Input[sp].rgb, PreExposure);
 

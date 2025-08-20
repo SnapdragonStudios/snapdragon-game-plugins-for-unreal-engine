@@ -28,21 +28,17 @@ RWTexture2D<half> NewLocks;
 
 float GetViewSpaceDepth(float fDeviceDepth)
 {
-	
 	return DeviceToViewDepth[1]/(fDeviceDepth-DeviceToViewDepth[0]);
-	
 }
 
 float3 GetViewSpacePosition(float2 iViewportPos, int2 iViewportSize, float fDeviceDepth)
 {
-
 	float Z = GetViewSpaceDepth(fDeviceDepth);
 	//ComputeNdc
 	float2 fNdcPos = iViewportPos/float2(iViewportSize)*float2(2.0,-2.0)+float2(-1.0,1.0);
 	float X = DeviceToViewDepth[2]*fNdcPos.x*Z;
 	float Y = DeviceToViewDepth[3]*fNdcPos.y*Z;
 	return float3(X,Y,Z);
-	
 }
 
 float EvaluateSurface(int2 iPxPos, float2 fMotionVector)
@@ -57,17 +53,12 @@ float EvaluateSurface(int2 iPxPos, float2 fMotionVector)
 float ComputeDepthClip(float2 fUvSample,float fCurrentDepthSample)
 {
 	float fCurrentDepthViewSpace = GetViewSpaceDepth(fCurrentDepthSample);
-	int2 iOffsets[4];
+	int2 iOffsets[4] = { int2(0, 0), int2(1, 0), int2(0, 1), int2(1, 1) };
 	float fWeights[4];
 
 	float2 fPxSample = (fUvSample * InputInfo_ViewportSize) - float2(0.5, 0.5);
 	int2 iBasePos = int2(floor(fPxSample));
 	float2 fPxFrac = frac(fPxSample);
-
-	iOffsets[0] = int2(0, 0);
-	iOffsets[1] = int2(1, 0);
-	iOffsets[2] = int2(0, 1);
-	iOffsets[3] = int2(1, 1);
 
 	fWeights[0] = (1 - fPxFrac.x) * (1 - fPxFrac.y);
 	fWeights[1] = (fPxFrac.x) * (1 - fPxFrac.y);
@@ -80,7 +71,6 @@ float ComputeDepthClip(float2 fUvSample,float fCurrentDepthSample)
 	[unroll] 
 	for (int iSampleIndex = 0; iSampleIndex < 4; iSampleIndex++)
 	{
-
 		const int2 iOffset = iOffsets[iSampleIndex];
 		const int2 iSamplePos = iBasePos + iOffset;
 
@@ -121,7 +111,6 @@ float ComputeDepthClip(float2 fUvSample,float fCurrentDepthSample)
 		}
 	}
 	return (fWeightSum > 0) ? saturate(1.0f - fDepth / fWeightSum) : 0.0f;
-
 }
 
 
@@ -300,7 +289,7 @@ void Activate(uint2 DisThreadID)
 {
 	float2 ViewportUV = (float2(DisThreadID) + 0.5f) * InputInfo_ViewportSizeInverse;
 
-	float3 motionDepth = DilatedMotionDepthLuma[DisThreadID].xyz; // dilated_motion dilated_depth
+	float3 motionDepth = DilatedMotionDepthLuma[DisThreadID].xyz;
 	float2 motion = motionDepth.xy;
 	float depth = motionDepth.z;
 

@@ -23,7 +23,6 @@
 #include "DataDrivenShaderPlatformInfo.h"
 #include "RenderGraphUtils.h"
 #include "RenderGraphBuilder.h"
-//#include "PostProcess/PostProcessMitchellNetravali.h"
 
 DECLARE_GPU_STAT(GSRPass)
 DECLARE_GPU_STAT_NAMED(GSRDispatch, TEXT("GSR Dispatch"));
@@ -76,8 +75,8 @@ static TAutoConsoleVariable<float> CVarGSRHistorySize(
 
 static TAutoConsoleVariable<bool> CVarGSRSample(
 	TEXT("r.SGSR2.5Sample"), 
-	0,
-	TEXT("Controls the sample number of input color, false to choose 9 sample for better image quality, true to choose 5 sample for better performance, default is 0"),
+	1,
+	TEXT("Controls the sample number of input color, false to choose 9 sample for better image quality, true to choose 5 sample for better performance, default is 1"),
 	ECVF_RenderThreadSafe
 );
 
@@ -88,28 +87,17 @@ static TAutoConsoleVariable<bool> CVarGSRSharpening(
 	ECVF_RenderThreadSafe);
 
 static TAutoConsoleVariable<float> CVarGSRSharpness(
-	TEXT("r.SGSR2.sharpness"),
+	TEXT("r.SGSR2.Sharpness"),
 	1.12,
-	TEXT("sharpness, default is 1.12"),
-	ECVF_RenderThreadSafe);
-
-static TAutoConsoleVariable<float> CVarGSRJitterSeqLength(
-	TEXT("r.SGSR2.JitterSeqLength"),
-	32.0,
-	TEXT("jitter sequence length, default is 32.0"),
+	TEXT("Sharpness, default is 1.12"),
 	ECVF_RenderThreadSafe);
 
 static TAutoConsoleVariable<bool> CVarGSRPixelLock(
 	TEXT("r.SGSR2.PixelLock"),
 	1,
-	TEXT("Enable PixelLock, default is false"),
+	TEXT("Enable PixelLock, default is true"),
 	ECVF_RenderThreadSafe);
 
-static TAutoConsoleVariable<bool> CVarGSRPixelLockReproject(
-	TEXT("r.SGSR2.PixelLockReproject"),
-	1,
-	TEXT("Enable PixelLock reprojection, default is false"),
-	ECVF_RenderThreadSafe);
 
 static TAutoConsoleVariable<bool> CVarGSRHalfPrecision(
 	TEXT("r.SGSR2.HalfPrecision"),
@@ -148,8 +136,6 @@ END_SHADER_PARAMETER_STRUCT()
 
 BEGIN_SHADER_PARAMETER_STRUCT(FGSRStateTextures, )
 	SHADER_PARAMETER_RDG_TEXTURE(Texture2D, Color)
-	SHADER_PARAMETER_RDG_TEXTURE(Texture2D, DilatedMotionDepthLuma)
-	SHADER_PARAMETER_RDG_TEXTURE(Texture2D, LockStatus)
 END_SHADER_PARAMETER_STRUCT()
 
 class FGSRShader : public FGlobalShader
@@ -182,7 +168,7 @@ public:
 			OutEnvironment.CompilerFlags.Add(CFLAG_AllowRealTypes);
 		}
 	}
-}; // class
+};
 
 class FGSRConvertCS : public FGSRShader
 {
@@ -222,18 +208,15 @@ class FGSRActivateCS : public FGSRShader
 	SHADER_USE_PARAMETER_STRUCT(FGSRActivateCS, FGSRShader);
 	class FInvertedDepthDim : SHADER_PERMUTATION_BOOL("INVERTED_DEPTH");
 	class FPixelLockDim : SHADER_PERMUTATION_BOOL("ENABLE_PIXEL_LOCK");
-	class FPixelLockReprojectionDim : SHADER_PERMUTATION_BOOL("ENABLE_PIXEL_LOCK_REPROJECTION");
-	using FPermutationDomain = TShaderPermutationDomain<FGSRShader::FBasePermutationDomain, FInvertedDepthDim, FPixelLockDim, FPixelLockReprojectionDim>;
+	using FPermutationDomain = TShaderPermutationDomain<FGSRShader::FBasePermutationDomain, FInvertedDepthDim, FPixelLockDim>;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		SHADER_PARAMETER_STRUCT_INCLUDE(FGSRCommonParameters, CommonParameters)
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, DilatedMotionDepthLuma)
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, PrevDilatedMotionDepthLuma)
 
 		SHADER_PARAMETER(FVector4f, DeviceToViewDepth)
 		SHADER_PARAMETER_SAMPLER(SamplerState, PointClamp)
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp)
-		
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, ReactiveMask)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, NewLocks)
 	END_SHADER_PARAMETER_STRUCT()
@@ -258,8 +241,7 @@ class FGSRUpscaleCS : public FGSRShader
 	class FDoSharpeningDim : SHADER_PERMUTATION_BOOL("DO_SHARPENING");
 	class FInvertedDepthDim : SHADER_PERMUTATION_BOOL("INVERTED_DEPTH");
 	class FPixelLockDim : SHADER_PERMUTATION_BOOL("ENABLE_PIXEL_LOCK");
-	class FPixelLockReprojectionDim : SHADER_PERMUTATION_BOOL("ENABLE_PIXEL_LOCK_REPROJECTION");
-	using FPermutationDomain = TShaderPermutationDomain<FGSRShader::FBasePermutationDomain, FSampleNumberDim, FDoSharpeningDim, FInvertedDepthDim, FPixelLockDim, FPixelLockReprojectionDim>;
+	using FPermutationDomain = TShaderPermutationDomain<FGSRShader::FBasePermutationDomain, FSampleNumberDim, FDoSharpeningDim, FInvertedDepthDim, FPixelLockDim>;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		SHADER_PARAMETER_STRUCT_INCLUDE(FGSRCommonParameters, CommonParameters)
@@ -268,7 +250,6 @@ class FGSRUpscaleCS : public FGSRShader
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, DilatedMotionDepthLuma)
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, PrevHistoryOutput)
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, ReactiveMask)
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, PrevLockStatus)
 
 		SHADER_PARAMETER_SAMPLER(SamplerState, PointClamp)
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp)
@@ -278,7 +259,6 @@ class FGSRUpscaleCS : public FGSRShader
 		
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, HistoryOutput)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, SceneColorOutput)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, LockStatus)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, NewLocks)
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -304,7 +284,7 @@ class FGSRSharpenCS : public FGSRShader
 		SHADER_PARAMETER_STRUCT_INCLUDE(FGSRCommonParameters, CommonParameters)
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, Input)
 		SHADER_PARAMETER(float, PreExposure)
-		SHADER_PARAMETER(float, sharpness)
+		SHADER_PARAMETER(float, Sharpness)
 		SHADER_PARAMETER_SAMPLER(SamplerState, PointClamp)
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, UpscaledOutput)
@@ -373,11 +353,7 @@ public:
 	bool RequiresRayTracingScene() const final { return false; }
 
 	void PreRender(FRDGBuilder&, TConstStridedView<FSceneView>, FSceneUniformBuffer&, bool) final{};
-	void PostRenderOpaque(FRDGBuilder& GraphBuilder, TConstStridedView<FSceneView> Views, FSceneUniformBuffer& SceneUniformBuffer, bool bAllowGPUParticleUpdate) final
-
-	{
-		//Upscaler->CopyOpaqueColor(GraphBuilder, Views, nullptr, this->SceneTexturesUniformBuffer);
-	}
+	void PostRenderOpaque(FRDGBuilder& GraphBuilder, TConstStridedView<FSceneView> Views, FSceneUniformBuffer& SceneUniformBuffer, bool bAllowGPUParticleUpdate) final {}
 	void SetSceneTexturesUniformBuffer(const TUniformBufferRef<FSceneTextureUniformParameters>& InSceneTexturesUniformParams) 
 		final { SceneTexturesUniformBuffer = InSceneTexturesUniformParams; }
 
@@ -513,7 +489,6 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 	const IGSRTemporalUpscaler::FInputs& PassInputs) const
 {
 	const FViewInfo& View = (FViewInfo&)(SceneView);
-	///output extent 
 	FIntPoint InputExtents = View.ViewRect.Size(); 
 	FIntRect InputRect = View.ViewRect;
 	FIntPoint InputExtentsQuantized;
@@ -579,7 +554,6 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 
 		if (HasValidContext)
 		{
-
 			if (CustomHistory->Getstate()->LastUsedFrame == GFrameCounterRenderThread)
 			{
 				HasValidContext = false;
@@ -596,13 +570,11 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 			FGSRState* Ptr = Availablestates.Pop();
 			while (Ptr)
 			{
-
 				if (Ptr->LastUsedFrame == GFrameCounterRenderThread && Ptr->ViewID != View.ViewState->UniqueID)
 				{
 					// These states can't be reused immediately but perhaps a future frame, otherwise we break split screen.
 					Reusablestates.Push(Ptr);
 				}
-
 				else
 				{
 					GSRState = Ptr;
@@ -645,8 +617,6 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 
 		bool bReset = !bHistoryValid || View.bCameraCut || !OutputHistory;
 
-		bool bPixelLock = CVarGSRPixelLock.GetValueOnRenderThread();
-		bool bPixelLockReproject = CVarGSRPixelLockReproject.GetValueOnRenderThread();
 
 		// Determine if we want/can use the 16bit shader variants
 		const EShaderPlatform ShaderPlatform = View.GetShaderPlatform();
@@ -691,22 +661,10 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 		if (!bHistoryValid)
 		{
 			PrevHistory.Color = BlackDummy;
-			PrevHistory.DilatedMotionDepthLuma = BlackDummy;
-			PrevHistory.LockStatus = BlackDummy;
 		}
 		else
 		{
 			PrevHistory.Color = GraphBuilder.RegisterExternalTexture(HistoryColorRT);
-			PrevHistory.DilatedMotionDepthLuma = GraphBuilder.RegisterExternalTexture(HistoryDilatedMotionDepthLumaRT);																				   
-		}
-		// PrevHJistory only used by some shader variants
-		if (bHistoryValid && HistoryLockStatusRT)
-		{
-			PrevHistory.LockStatus = GraphBuilder.RegisterExternalTexture(HistoryLockStatusRT);
-		}
-		else
-		{
-			PrevHistory.LockStatus = BlackDummy;
 		}
 
 		FGSRStateTextures History;
@@ -720,20 +678,9 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 		
 		HistoryDesc.Format = PF_FloatRGBA;
 		HistoryDesc.Extent = InputExtents;
-		History.DilatedMotionDepthLuma = GraphBuilder.CreateTexture(HistoryDesc, TEXT("GSRstate DilatedMotionDepthLuma"));
-		
-		const EPixelFormat locksFormat = IsOpenGLPlatform(GMaxRHIShaderPlatform) ? PF_R32_FLOAT : PF_R16F;
+		FRDGTextureRef DilatedMotionDepthLuma = GraphBuilder.CreateTexture(HistoryDesc, TEXT("GSRstate DilatedMotionDepthLuma"));
 
-		FRDGTextureDesc LocksDesc = FRDGTextureDesc::Create2D(
-			OutputExtents,
-			locksFormat,
-			FClearValueBinding::None,
-			TexCreate_ShaderResource | TexCreate_UAV);
-
-		History.LockStatus = GraphBuilder.CreateTexture(LocksDesc, TEXT("GSRstate LockStatus"));
-		FRDGTextureUAVRef LockStatusUAVRef = GraphBuilder.CreateUAV(History.LockStatus);
-
-		FRDGTextureRef YCoCgLuma;	
+		FRDGTextureRef YCoCgLuma;
 		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(
 			InputExtents,
 			PF_FloatRGBA,
@@ -766,7 +713,7 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 			PassParameters->LinearClamp = TStaticSamplerState<SF_Bilinear>::GetRHI();
 
 			PassParameters->YCoCgLuma = GraphBuilder.CreateUAV(YCoCgLuma);
-			PassParameters->DilatedMotionDepthLuma = GraphBuilder.CreateUAV(History.DilatedMotionDepthLuma);
+			PassParameters->DilatedMotionDepthLuma = GraphBuilder.CreateUAV(DilatedMotionDepthLuma);
 
 			FGSRConvertCS::FPermutationDomain PermutationVector;
 			PermutationVector.Set<FGSRConvertCS::FInvertedDepthDim>(bool(ERHIZBuffer::IsInverted));
@@ -781,14 +728,21 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 				FComputeShaderUtils::GetGroupCount(InputRect.Size(), FIntPoint(16, 8)));
 		}
 		
+		const EPixelFormat maskFormat = IsOpenGLPlatform(GMaxRHIShaderPlatform) ? PF_R32_FLOAT : PF_R16F;
+		
 		FRDGTextureRef NewLocks;
-		NewLocks = GraphBuilder.CreateTexture(LocksDesc, TEXT("GSR.NewLocks"));
+		FRDGTextureDesc NewLocksDesc = FRDGTextureDesc::Create2D(
+			OutputExtents,
+			maskFormat,
+			FClearValueBinding::None,
+			TexCreate_ShaderResource | TexCreate_UAV);
+
+		NewLocks = GraphBuilder.CreateTexture(NewLocksDesc, TEXT("GSR.NewLocks"));
 
 		FRDGTextureUAVRef NewLocksUAVRef = GraphBuilder.CreateUAV(NewLocks);
 
-		const EPixelFormat maskFormat = bPixelLock ? PF_FloatRGBA /*fp16*/ : (IsOpenGLPlatform(GMaxRHIShaderPlatform) ? PF_R32_FLOAT : PF_R16F);
+		FRDGTextureRef ReactiveMask;
 
-		FRDGTextureRef ReactiveMask;		
 		FRDGTextureDesc ReactiveMaskDesc = FRDGTextureDesc::Create2D(
 			InputExtents,
 			maskFormat,
@@ -796,14 +750,11 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 			TexCreate_ShaderResource | TexCreate_UAV);
 
 		ReactiveMask = GraphBuilder.CreateTexture(ReactiveMaskDesc, TEXT("GSR.ReactiveMask"));
-
 		
 		{
 			FGSRActivateCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FGSRActivateCS::FParameters>();
 			PassParameters->CommonParameters = CommonParameters;
-			//PF_R32_UINT
-			PassParameters->DilatedMotionDepthLuma = History.DilatedMotionDepthLuma;
-			PassParameters->PrevDilatedMotionDepthLuma = PrevHistory.DilatedMotionDepthLuma;
+			PassParameters->DilatedMotionDepthLuma = DilatedMotionDepthLuma;
 
 			const bool bInverted = bool(ERHIZBuffer::IsInverted);
 			const bool bInfinite = true;
@@ -816,11 +767,9 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 				fMin = View.ViewMatrices.ComputeNearPlane();
 				fMax = FLT_MAX;
 			}
-			
 
 			const float fQ = fMax / (fMin - fMax);
 			const float d = -1.0f; // for clarity
-
 			const float matrix_elem_c[2][2] = {
 				{
 					fQ,					// non reversed, non infinite
@@ -831,7 +780,6 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 					0.0f + FLT_EPSILON // reversed, infinite
 				}
 			};
-
 			const float matrix_elem_e[2][2] = {
 				{
 					fQ * fMin,			// non reversed, non infinite
@@ -849,7 +797,7 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 			const float a = cotHalfFovY / aspect;
 			const float b = cotHalfFovY;
 	
-			PassParameters->DeviceToViewDepth = FVector4f(d * matrix_elem_c[bInverted][bInfinite], matrix_elem_e[bInverted][bInfinite], (1.0f / a), (1.0f / b));	
+			PassParameters->DeviceToViewDepth = FVector4f(d * matrix_elem_c[bInverted][bInfinite], matrix_elem_e[bInverted][bInfinite], (1.0f / a), (1.0f / b));
 			
 			PassParameters->PointClamp = TStaticSamplerState<SF_Point>::GetRHI();
 			PassParameters->LinearClamp = TStaticSamplerState<SF_Bilinear>::GetRHI();
@@ -859,8 +807,7 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 
 			FGSRActivateCS::FPermutationDomain PermutationVector;
 			PermutationVector.Set<FGSRActivateCS::FInvertedDepthDim>(bool(ERHIZBuffer::IsInverted));
-			PermutationVector.Set<FGSRActivateCS::FPixelLockDim>(bPixelLock);
-			PermutationVector.Set<FGSRActivateCS::FPixelLockReprojectionDim>(bPixelLockReproject);
+			PermutationVector.Set<FGSRActivateCS::FPixelLockDim>(CVarGSRPixelLock.GetValueOnRenderThread());
 			PermutationVector.Set<FGSRActivateCS::FBasePermutationDomain>(BasePermutationVector);
 
 			TShaderMapRef<FGSRActivateCS> ComputeShader(View.ShaderMap, PermutationVector);
@@ -891,28 +838,23 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 			FGSRUpscaleCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FGSRUpscaleCS::FParameters>();
 			PassParameters->CommonParameters = CommonParameters;
 			PassParameters->YCoCgLuma = YCoCgLuma;
-			PassParameters->DilatedMotionDepthLuma = History.DilatedMotionDepthLuma;
+			PassParameters->DilatedMotionDepthLuma = DilatedMotionDepthLuma;
+			PassParameters->NewLocks = NewLocksUAVRef;
 			PassParameters->PrevHistoryOutput = PrevHistory.Color;
 			PassParameters->ReactiveMask = ReactiveMask;
-			PassParameters->PrevLockStatus = PrevHistory.LockStatus;
 			PassParameters->PreExposure = View.PreExposure;
 			PassParameters->ValidReset = bReset;
-			PassParameters->JitterSeqLength = (CVarGSRJitterSeqLength.GetValueOnRenderThread());
+			PassParameters->JitterSeqLength = View.TemporalJitterSequenceLength;
 			PassParameters->PointClamp = TStaticSamplerState<SF_Point>::GetRHI();
 			PassParameters->LinearClamp = TStaticSamplerState<SF_Bilinear>::GetRHI();
 
 			PassParameters->HistoryOutput = GraphBuilder.CreateUAV(History.Color);
 			PassParameters->SceneColorOutput = GraphBuilder.CreateUAV(ColorOutputTexture);
-			PassParameters->NewLocks = NewLocksUAVRef;
-			PassParameters->LockStatus = LockStatusUAVRef;
-
 			FGSRUpscaleCS::FPermutationDomain PermutationVector;
 			PermutationVector.Set<FGSRUpscaleCS::FSampleNumberDim>(CVarGSRSample.GetValueOnRenderThread());
 			PermutationVector.Set<FGSRUpscaleCS::FDoSharpeningDim>(CVarGSRSharpening.GetValueOnRenderThread());
 			PermutationVector.Set<FGSRUpscaleCS::FInvertedDepthDim>(bool(ERHIZBuffer::IsInverted));
-			PermutationVector.Set<FGSRUpscaleCS::FPixelLockDim>(bPixelLock);
-			PermutationVector.Set<FGSRUpscaleCS::FPixelLockReprojectionDim>(bPixelLockReproject);
-			PermutationVector.Set<FGSRUpscaleCS::FBasePermutationDomain>(BasePermutationVector);
+			PermutationVector.Set<FGSRUpscaleCS::FPixelLockDim>(CVarGSRPixelLock.GetValueOnRenderThread());
 			TShaderMapRef<FGSRUpscaleCS> ComputeShader(View.ShaderMap, PermutationVector);
 			FComputeShaderUtils::AddPass(
 				GraphBuilder,
@@ -930,7 +872,7 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 			TShaderMapRef<FGSRSharpenCS> ComputeShader(View.ShaderMap, PermutationVector);
 			PassParameters->Input = History.Color;
 			PassParameters->PreExposure = View.PreExposure;
-			PassParameters->sharpness = (CVarGSRSharpness.GetValueOnRenderThread());
+			PassParameters->Sharpness = (CVarGSRSharpness.GetValueOnRenderThread());
 			PassParameters->PointClamp = TStaticSamplerState<SF_Point>::GetRHI();
 			PassParameters->LinearClamp = TStaticSamplerState<SF_Bilinear>::GetRHI();
 			PassParameters->UpscaledOutput = GraphBuilder.CreateUAV(ColorOutputTexture);
@@ -945,9 +887,6 @@ IGSRTemporalUpscaler::FOutputs FGSRTU::AddPasses(
 		if (bWritePrevViewInfo)
 		{
 			GraphBuilder.QueueTextureExtraction(History.Color, &HistoryColorRT);
-			GraphBuilder.QueueTextureExtraction(History.DilatedMotionDepthLuma, &HistoryDilatedMotionDepthLumaRT);
-			if (History.LockStatus->HasBeenProduced())	// pontentially shader variant does not write to this texture
-				GraphBuilder.QueueTextureExtraction(History.LockStatus, &HistoryLockStatusRT);
 		}
 
 		Outputs.FullRes.Texture = ColorOutputTexture;
@@ -1048,8 +987,6 @@ void FGSRTU::CopyOpaqueColor(FRDGBuilder& GraphBuilder, TConstStridedView<FScene
 				RHICmdList.Transition(FRHITransitionInfo(SceneColorpreAlpha, ERHIAccess::Unknown, ERHIAccess::CopyDest));
 				PassParameters->InputColor->MarkResourceAsUsed();
 				PassParameters->OutputColor->MarkResourceAsUsed();
-				/*this->Opaque = Opaque;*/
-				/*this->CopyOpaqueSceneColor(RHICmdList, ViewUniformBuffer, nullptr, this->SceneTexturesUniformParams);*/
 				SCOPED_DRAW_EVENTF(RHICmdList, GSRTU_CopyOpaqueScenecolor, TEXT("GSRTU CopyOpaqueSceneColor"));
 
 				FRHICopyTextureInfo Info;

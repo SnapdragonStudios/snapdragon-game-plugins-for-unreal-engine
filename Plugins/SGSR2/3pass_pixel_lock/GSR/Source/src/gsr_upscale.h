@@ -15,7 +15,6 @@ https://github.com/GPUOpen-Effects/FidelityFX-FSR2/blob/master/src/ffx-fsr2-api/
 under MIT license
 */
 
-
 #define five_sample_use SAMPLE_NUMBER
 #define GSR_OPTION_APPLY_SHARPENING DO_SHARPENING
 #define GSR_OPTION_INVERTED_DEPTH INVERTED_DEPTH
@@ -37,10 +36,10 @@ RWTexture2D<half4> HistoryOutput;
 RWTexture2D<half3> SceneColorOutput;
 RWTexture2D<half> NewLocks;
 
-half3 ComputeBaseAccumutationWeight(half fThisFrameReactive, half fDepthClipFactor, bool bIsExistingSample, bool bInMotionLastFrame, half fUpsampledWeight, half fHrVelocity)
+half3 ComputeBaseAccumutationWeight(half fThisFrameReactive, half fDepthClipFactor, bool bIsExistingSample, half bInMotionLastFrame, half fUpsampledWeight, half fHrVelocity)
 {
-	half fBaseAccumulation = half(bIsExistingSample) * (1.0 - fThisFrameReactive) * (1.0 - fDepthClipFactor); // bInMotionLastFrame = (History.w<0.0f);
-	fBaseAccumulation = min(fBaseAccumulation, lerp(fBaseAccumulation, fUpsampledWeight * 10.0, max(half(bInMotionLastFrame), saturate(fHrVelocity * 10.0))));
+	half fBaseAccumulation = half(bIsExistingSample) * (1.0 - fThisFrameReactive) * (1.0 - fDepthClipFactor);
+	fBaseAccumulation = min(fBaseAccumulation, lerp(fBaseAccumulation, fUpsampledWeight * 10.0, max(bInMotionLastFrame, saturate(fHrVelocity * 10.0))));
 	fBaseAccumulation = min(fBaseAccumulation, lerp(fBaseAccumulation, fUpsampledWeight, saturate(fHrVelocity / 20.0)));
 	return fBaseAccumulation.xxx;
 }
@@ -67,7 +66,7 @@ half FastLanczos(half x2)
 	return ((25.0 / 16.0) * a * a - (9.0 / 16.0)) * (b * b);
 }
 
-bool ReprojectHistoryLockStatus(float2 fReprojectedHrUv, int2 iPxHrPos, inout half fReprojectedLockStatus)
+bool ReprojectHistoryLockStatus(int2 iPxHrPos, inout half fReprojectedLockStatus)
 {
 	const half fNewLockIntensity = NewLocks[iPxHrPos];
 	bool bNewLock = fNewLockIntensity > 1.999;
@@ -75,15 +74,19 @@ bool ReprojectHistoryLockStatus(float2 fReprojectedHrUv, int2 iPxHrPos, inout ha
 	return bNewLock;
 }
 
-void UpdateLockStatus(half fDepthClipFactor, half fAccumulationMask,
-	inout half fReactiveFactor, bool bNewLock,
+void UpdateLockStatus(half fDepthClipFactor,
+	half fReactiveFactor, bool bNewLock,
 	inout half fLockStatus,
 	out half fLockContributionThisFrame,
 	half fLuminanceDiff)
 {
-	if (fLockStatus < 1.9999)  //if not a new lock
+	if (!bNewLock) // if not a new lock
 	{
-		fLockStatus *= half(fLuminanceDiff > 0.4);
+#if five_sample_use
+		fLockStatus *= half(fLuminanceDiff > 0.5);
+#else
+		fLockStatus *= half(fLuminanceDiff > 0.9);
+#endif
 	}
 
 	fLockStatus *= half(fReactiveFactor + half(FLT_FP16_MIN) > 0 && fReactiveFactor - half(FLT_FP16_MIN) < 0);
@@ -94,26 +97,26 @@ void UpdateLockStatus(half fDepthClipFactor, half fAccumulationMask,
 	// Compute this frame lock contribution
 	const half fLifetimeContribution = saturate(fLockStatus - 1.0);
 
-	fLockContributionThisFrame = saturate(saturate(fLifetimeContribution * 4.0));
+	fLockContributionThisFrame = saturate(fLifetimeContribution * 4.0);
 }
 
-void FinalizeLockStatus(float2 fHrUv, float2 fMotionVector, int2 iPxHrPos, half fLockStatus, half fUpsampledWeight, half hrVelocity)
+void FinalizeLockStatus(float2 fHrUv, float2 fMotionVector, int2 iPxHrPos, half fLockStatus, half fUpsampledWeight)
 {
 	float2 fEstimatedUvNextFrame = fHrUv - fMotionVector;
 	if (IsUvInside(fEstimatedUvNextFrame) == false)
 	{
-		fLockStatus = 0.0;
+		fLockStatus = 0;
 	}
 	else
 	{
 		// Decrease lock lifetime
-#ifdef GSR_OPTION_APPLY_5SAMPLE
+#if five_sample_use
 		half fUpsampleLanczosWeightScale = 1.0 / 5.0;
 #else
 		half fUpsampleLanczosWeightScale = 1.0 / 9.0;
 #endif
-		half fAverageLanczosWeightPerFrame = 0.74 * fUpsampleLanczosWeightScale;						  // Average lanczos weight for jitter accumulated samples
-		const half fLifetimeDecreaseLanczosMax = half(JitterSeqLength) * fAverageLanczosWeightPerFrame; // 2.631
+		half fAverageLanczosWeightPerFrame = 0.74 * fUpsampleLanczosWeightScale;
+		const half fLifetimeDecreaseLanczosMax = half(JitterSeqLength) * fAverageLanczosWeightPerFrame;
 		const half fLifetimeDecrease = half(fUpsampledWeight / fLifetimeDecreaseLanczosMax);
 		fLockStatus = max(half(0.0), fLockStatus - fLifetimeDecrease);
 	}
@@ -129,18 +132,13 @@ void Update(uint2 DisThreadID)
 	int2 InputPos = Jitteruv * InputInfo_ViewportSize;
 
 	float2 Motion = DilatedMotionDepthLuma.SampleLevel(LinearClamp, Hruv, 0).xy;
-	half fReactiveMasks = ReactiveMask.SampleLevel(LinearClamp, Jitteruv, 0).x;
-	float2 PrevUV;
+	half fDepthFactor = ReactiveMask.SampleLevel(LinearClamp, Jitteruv, 0).x;
+	float2 PrevUV = float2(Motion.x + Hruv.x, Motion.y + Hruv.y);
 
-	PrevUV.x = Motion.x + Hruv.x;
-	PrevUV.y = Motion.y + Hruv.y;
-
-	half fDepthFactor = fReactiveMasks.x;
-	half fAccumulationMask = 0.0;
 	half4 History = half4(0.0, 0.0, 0.0, 0.0);
 
 	half fTemporalReactiveFactor = 0.0;
-	bool bInMotionLastFrame = false;
+	half bInMotionLastFrame = 0.0;
 	bool bIsExistingSample = IsUvInside(PrevUV);
 	bool bIsResetFrame = (ValidReset > FLT_EPSILON);
 	bool bIsNewSample = (!bIsExistingSample || bIsResetFrame);
@@ -153,44 +151,16 @@ void Update(uint2 DisThreadID)
 		fTemporalReactiveFactor = saturate(abs(History.w));
 		bInMotionLastFrame = (History.w < 0.0);
 #if GSR_OPTION_PIXEL_LOCK
-		bNewLock = ReprojectHistoryLockStatus(PrevUV, int2(DisThreadID), fReprojectedLockStatus);
+		bNewLock = ReprojectHistoryLockStatus(int2(DisThreadID), fReprojectedLockStatus);
 #endif
 	}
-	half fThisFrameReactiveFactor = max(0.0, fTemporalReactiveFactor);
+	half fThisFrameReactiveFactor = fTemporalReactiveFactor;
 
 	History.xyz = PrepareRgb(History.xyz, half(PreExposure));
 	History.xyz = RGBToYCoCg(History.xyz);
 
 	half3 HistoryColor = History.xyz;
 
-	half fLockContributionThisFrame = 0.0;
-	half fLuminanceDiff = 0.0;
-#if GSR_OPTION_PIXEL_LOCK
-	half curLuma = YCoCgLuma.SampleLevel(PointClamp, Jitteruv, 0).x;
-	half prevLuma = History.x;
-	half maxLuma = max(curLuma, prevLuma);
-	half fLuminanceDiff1 = maxLuma > half(FLT_FP16_MIN) ? min(curLuma, prevLuma) / maxLuma : 0.0;
-
-	curLuma = YCoCgLuma.SampleLevel(PointClamp, Jitteruv, 0, int2(1, 0)).x;
-	maxLuma = max(curLuma, prevLuma);
-	half fLuminanceDiff2 = maxLuma > half(FLT_FP16_MIN) ? min(curLuma, prevLuma) / maxLuma : 0.0;
-
-	curLuma = YCoCgLuma.SampleLevel(PointClamp, Jitteruv, 0, int2(0, 1)).x;
-	maxLuma = max(curLuma, prevLuma);
-	half fLuminanceDiff3 = maxLuma > half(FLT_FP16_MIN) ? min(curLuma, prevLuma) / maxLuma : 0.0;
-
-	curLuma = YCoCgLuma.SampleLevel(PointClamp, Jitteruv, 0, int2(-1, 0)).x;
-	maxLuma = max(curLuma, prevLuma);
-	half fLuminanceDiff4 = maxLuma > half(FLT_FP16_MIN) ? min(curLuma, prevLuma) / maxLuma : 0.0;
-
-	curLuma = YCoCgLuma.SampleLevel(PointClamp, Jitteruv, 0, int2(0, -1)).x;
-	maxLuma = max(curLuma, prevLuma);
-	half fLuminanceDiff5 = maxLuma > half(FLT_FP16_MIN) ? min(curLuma, prevLuma) / maxLuma : 0.0;
-
-	fLuminanceDiff = fLuminanceDiff1 + fLuminanceDiff2 + fLuminanceDiff3 + fLuminanceDiff4 + fLuminanceDiff5; 
-
-	UpdateLockStatus(fDepthFactor, fAccumulationMask, fThisFrameReactiveFactor, bNewLock, fReprojectedLockStatus, fLockContributionThisFrame, fLuminanceDiff); // TODO: use fLuminanceDiff to ComputeLumaInstabilityFactor
-#endif
 	/////upsample and compute box
 	half fKernelReactiveFacor = max(fThisFrameReactiveFactor, half(bIsNewSample));
 	half fKernelWeight = half(1.0 + (HistoryInfo_ViewportSize.x * InputInfo_ViewportSizeInverse.x - 1.0) /* * 1.0*/);
@@ -241,6 +211,11 @@ void Update(uint2 DisThreadID)
 	};
 	const int sampleNums = 9;
 #endif
+	half fLockContributionThisFrame = 0.0;
+	half fLuminanceDiff = 0.0;
+#if GSR_OPTION_PIXEL_LOCK
+	half prevLuma = History.x;
+#endif
 	[unroll] for (int i = 0; i < sampleNums; i++)
 	{
 		int16_t2 offset = sampleOffset[i];
@@ -265,9 +240,17 @@ void Update(uint2 DisThreadID)
 		rectboxmax = max(rectboxmax, samplecolor);
 		half3 wsample = samplecolor * boxweight;
 		rectboxcenter += wsample;
-		rectboxvar += (samplecolor * wsample); 
-		rectboxweight += boxweight;			  
+		rectboxvar += (samplecolor * wsample);
+		rectboxweight += boxweight;
+#if GSR_OPTION_PIXEL_LOCK
+		half curLuma = samplecolor.x;
+		half maxLuma = max(curLuma, prevLuma);
+		fLuminanceDiff += maxLuma > half(FLT_FP16_MIN) ? min(curLuma, prevLuma) / maxLuma : 0.0;
+#endif
 	}
+#if GSR_OPTION_PIXEL_LOCK
+	UpdateLockStatus(fDepthFactor, fThisFrameReactiveFactor, bNewLock, fReprojectedLockStatus, fLockContributionThisFrame, fLuminanceDiff);
+#endif
 
 	half fBoxCenterWeight = abs(rectboxweight) > 0.001 ? rectboxweight : 1.0;
 	rectboxweight = 1.0 / fBoxCenterWeight;
@@ -276,16 +259,13 @@ void Update(uint2 DisThreadID)
 
 	rectboxvar = sqrt(abs(rectboxvar - rectboxcenter * rectboxcenter));
 
-	//UpsampledColorAndWeight.w *= half(UpsampledColorAndWeight.w > 0.001);
 	if (UpsampledColorAndWeight.w > 0.001)
 	{
 		UpsampledColorAndWeight.xyz = UpsampledColorAndWeight.xyz / UpsampledColorAndWeight.w;
-		UpsampledColorAndWeight.w = UpsampledColorAndWeight.w * (1.0 / half(sampleNums));
+		UpsampledColorAndWeight.w = UpsampledColorAndWeight.w * (1.0 / 9.0);
 		UpsampledColorAndWeight.xyz = clamp(UpsampledColorAndWeight.xyz, rectboxmin, rectboxmax);
 	}
 
-	half3 fAccumulation = ComputeBaseAccumutationWeight(fThisFrameReactiveFactor, fDepthFactor, bIsExistingSample, bInMotionLastFrame, UpsampledColorAndWeight.w, fHrVelocity);
-	half BaseAccumulation = fAccumulation.x;
 	if (bIsNewSample)
 	{
 		HistoryColor = YCoCgToRGB(UpsampledColorAndWeight.xyz);
@@ -305,14 +285,13 @@ void Update(uint2 DisThreadID)
 		rectboxmin = max(rectboxmin, boxmin);
 		half3 clampedHistoryColor = clamp(HistoryColor, rectboxmin, rectboxmax);
 
-		half fLumaInstabilityFactor = 0.0; /// TODO:need to implement fLumaInstabilityFactor?
-		half lerpcontribution = 0.0;
+		half3 fAccumulation = ComputeBaseAccumutationWeight(fThisFrameReactiveFactor, fDepthFactor, bIsExistingSample, bInMotionLastFrame, UpsampledColorAndWeight.w, fHrVelocity);
 		if (any(rectboxmin > HistoryColor) || any(HistoryColor > rectboxmax)) 
 		{
-			lerpcontribution = max(fLumaInstabilityFactor, fLockContributionThisFrame);
-			HistoryColor = lerp(clampedHistoryColor, HistoryColor, saturate(lerpcontribution));
+			half lerpcontribution = saturate(fLockContributionThisFrame);
+			HistoryColor = lerp(clampedHistoryColor, HistoryColor, lerpcontribution);
 			half3 fAccumulationMin = min(fAccumulation, half3(0.1, 0.1, 0.1));
-			fAccumulation = lerp(fAccumulationMin, fAccumulation, saturate(lerpcontribution));
+			fAccumulation = lerp(fAccumulationMin, fAccumulation, lerpcontribution);
 		}
 
 		////blend color
@@ -330,11 +309,12 @@ void Update(uint2 DisThreadID)
 	}
 
 	HistoryColor = UnprepareRgb(HistoryColor, half(PreExposure));
+
 #if GSR_OPTION_PIXEL_LOCK
-	FinalizeLockStatus(PrevUV, Motion, int2(DisThreadID), fReprojectedLockStatus, UpsampledColorAndWeight.w, fHrVelocity);
+	FinalizeLockStatus(PrevUV, Motion, int2(DisThreadID), fReprojectedLockStatus, UpsampledColorAndWeight.w);
 #endif
 	fTemporalReactiveFactor = ComputeTemporalReactiveFactor(fThisFrameReactiveFactor, fDepthFactor, fHrVelocity, bIsNewSample);
-	HistoryOutput[DisThreadID] = half4(HistoryColor, fTemporalReactiveFactor);	
+	HistoryOutput[DisThreadID] = half4(HistoryColor, fTemporalReactiveFactor);
 
 #if GSR_OPTION_APPLY_SHARPENING == 0
 	SceneColorOutput[DisThreadID] = HistoryColor;
