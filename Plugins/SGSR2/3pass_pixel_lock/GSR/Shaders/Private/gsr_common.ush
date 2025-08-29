@@ -1,0 +1,220 @@
+//============================================================================================================
+//
+//
+//                  Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+//                              SPDX-License-Identifier: BSD-3-Clause
+//
+//============================================================================================================
+
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Private/Random.ush"
+#include "/Engine/Private/TextureSampling.ush"
+#include "/Engine/Private/FastMath.ush"
+
+#if !defined(CONFIG_COMPILE_FP16)
+#error "CONFIG_COMPILE_FP16 should be defined by permutations"
+#endif
+
+#if CONFIG_COMPILE_FP16
+// override Common.ush defining half to be float on some platforms (eg Android) (which it does to prevent performance and compatibilty issues on older h/w).
+#define half      half
+#define half2     half2
+#define half3     half3
+#define half4     half4
+#endif
+#if !PLATFORM_SUPPORTS_REAL_TYPES || !CONFIG_COMPILE_FP16
+#define uint16_t   uint
+#define uint16_t2  uint2
+#define uint16_t3  uint3
+#define uint16_t4  uint4
+#define int16_t    int
+#define int16_t2   int2
+#define int16_t3   int3
+#define int16_t4   int4
+#endif
+
+#pragma warning(error: 3206)
+
+float2 InputInfo_Extent;
+float2 InputInfo_ExtentInverse;
+float2 InputInfo_ScreenPosToViewportScale;
+float2 InputInfo_ScreenPosToViewportBias;
+uint2  InputInfo_ViewportMin;
+uint2  InputInfo_ViewportMax;
+float2 InputInfo_ViewportSize;
+float2 InputInfo_ViewportSizeInverse;
+float2 InputInfo_UVViewportMin;
+float2 InputInfo_UVViewportMax;
+float2 InputInfo_UVViewportSize;
+float2 InputInfo_UVViewportSizeInverse;
+float2 InputInfo_UVViewportBilinearMin;
+float2 InputInfo_UVViewportBilinearMax;
+float2 InputJitter;
+
+float2 DepthInfo_Extent;
+float2 DepthInfo_ExtentInverse;
+float2 DepthInfo_ScreenPosToViewportScale;
+float2 DepthInfo_ScreenPosToViewportBias;
+uint2 DepthInfo_ViewportMin;
+uint2 DepthInfo_ViewportMax;
+float2 DepthInfo_ViewportSize;
+float2 DepthInfo_ViewportSizeInverse;
+float2 DepthInfo_UVViewportMin;
+float2 DepthInfo_UVViewportMax;
+float2 DepthInfo_UVViewportSize;
+float2 DepthInfo_UVViewportSizeInverse;
+float2 DepthInfo_UVViewportBilinearMin;
+float2 DepthInfo_UVViewportBilinearMax;
+
+float2 HistoryInfo_Extent;
+float2 HistoryInfo_ExtentInverse;
+float2 HistoryInfo_ScreenPosToViewportScale;
+float2 HistoryInfo_ScreenPosToViewportBias;
+uint2  HistoryInfo_ViewportMin;
+uint2  HistoryInfo_ViewportMax;
+float2 HistoryInfo_ViewportSize;
+float2 HistoryInfo_ViewportSizeInverse;
+float2 HistoryInfo_UVViewportMin;
+float2 HistoryInfo_UVViewportMax;
+float2 HistoryInfo_UVViewportSize;
+float2 HistoryInfo_UVViewportSizeInverse;
+float2 HistoryInfo_UVViewportBilinearMin;
+float2 HistoryInfo_UVViewportBilinearMax;
+
+float2 OutputInfo_Extent;
+float2 OutputInfo_ExtentInverse;
+float2 OutputInfo_ScreenPosToViewportScale;
+float2 OutputInfo_ScreenPosToViewportBias;
+uint2  OutputInfo_ViewportMin;
+uint2  OutputInfo_ViewportMax;
+float2 OutputInfo_ViewportSize;
+float2 OutputInfo_ViewportSizeInverse;
+float2 OutputInfo_UVViewportMin;
+float2 OutputInfo_UVViewportMax;
+float2 OutputInfo_UVViewportSize;
+float2 OutputInfo_UVViewportSizeInverse;
+float2 OutputInfo_UVViewportBilinearMin;
+float2 OutputInfo_UVViewportBilinearMax;
+
+#define FLT_EPSILON		(1.192092896e-07)
+#define FLT_MAX			(3.402823466e+38)
+#define FLT_FP16_MIN	(6.10e-05)
+#define FLT_FP16_MAX	(65504.0)
+
+//Functions related to color space conversion
+half3 Tonemap(half3 fRgb){
+	return fRgb / (max(max(half(0.0), fRgb.r), max(fRgb.g, fRgb.b)) + half(1.0)).xxx;
+}
+
+half3 InverseTonemap(half3 fRgb){
+	return fRgb / max(FLT_FP16_MIN/*fp16 inf fix*/, 1.0 - max(fRgb.r, max(fRgb.g, fRgb.b))).xxx;
+}
+
+half3 RGBToYCoCg(half3 fRgb){
+	half3 fYCoCg;
+	fYCoCg = half3(
+					0.25*fRgb.r+0.5*fRgb.g+0.25*fRgb.b,
+					0.5*fRgb.r-0.5*fRgb.b,
+					-0.25*fRgb.r+0.5*fRgb.g-0.25*fRgb.b);
+	return fYCoCg;
+}
+
+#if CONFIG_COMPILE_FP16
+// see EncodeVelocityToTexture()
+half2 DecodeVelocityFromTexture(half4 InEncodedV)
+{
+#if COMPILER_GLSL_ES3_1
+	#error "COMPILER_GLSL_ES3_1 not supported"
+#else
+	half4 EncodedV = InEncodedV;
+#endif
+	half InvDiv = 1.0 / (0.499 * 0.5);
+
+	half2 V;
+	V.xy = EncodedV.xy * InvDiv - 32767.0 / 65535.0 * InvDiv;
+
+#if VELOCITY_ENCODE_GAMMA
+	V.xy = (V.xy * abs(V.xy)) * 0.5;
+#endif
+
+	return V;
+}
+#endif // CONFIG_COMPILE_FP16
+
+half3 YCoCgToRGB(half3 fYCoCg){
+	half3 fRgb;
+	fRgb = half3(
+				  fYCoCg.x+fYCoCg.y-fYCoCg.z,
+				  fYCoCg.x+fYCoCg.z,
+				  fYCoCg.x-fYCoCg.y-fYCoCg.z);
+	return fRgb;
+}
+
+//Functions related to coordinate calculation
+int2 ClampLoad(int2 iPxSample, int2 iPxOffset, int2 iTextureSize)
+{
+	int2 result = iPxSample + iPxOffset;
+    result.x = (iPxOffset.x < 0) ? max(result.x, 0) : result.x;
+    result.x = (iPxOffset.x > 0) ? min(result.x, iTextureSize.x - 1) : result.x;
+    result.y = (iPxOffset.y < 0) ? max(result.y, 0) : result.y;
+    result.y = (iPxOffset.y > 0) ? min(result.y, iTextureSize.y - 1) : result.y;
+	return result;
+}
+
+#if CONFIG_COMPILE_FP16
+half3 PrepareRgb(half3 fRgb, half fPreExposure)
+{
+	fRgb /= fPreExposure;
+	// fRgb *= fExposure;
+
+	fRgb = clamp(fRgb, 0.0, FLT_FP16_MAX);
+
+	return fRgb;
+}
+#endif // CONFIG_COMPILE_FP16
+
+float3 PrepareRgb(float3 fRgb, float fPreExposure)
+{
+    fRgb /= fPreExposure;
+    //fRgb *= fExposure;
+
+    fRgb = clamp(fRgb, 0.0, FLT_FP16_MAX);
+
+    return fRgb;
+}
+
+float3 UnprepareRgb(float3 fRgb, float fPreExposure)
+{
+    //fRgb /= fExposure;
+    fRgb *= fPreExposure;
+
+    return fRgb;
+}
+
+#if CONFIG_COMPILE_FP16
+half3 UnprepareRgb(half3 fRgb, half fPreExposure)
+{
+    //fRgb /= fExposure;
+	fRgb *= fPreExposure;
+
+	return fRgb;
+}
+#endif // CONFIG_COMPILE_FP16
+
+
+float2 ClampUv(float2 fUv, int2 iTextureSize, int2 iResourceSize)
+{
+    const float2 fSampleLocation = fUv * iTextureSize;
+    const float2 fClampedLocation = max(float2(0.5, 0.5), min(fSampleLocation, float2(iTextureSize) - float2(0.5, 0.5)));
+    const float2 fClampedUv = fClampedLocation / float2(iResourceSize);
+
+    return fClampedUv;
+}
+
+bool IsUvInside(float2 fUv)
+{
+	return (fUv.x >= 0.0 && fUv.x <= 1.0) && (fUv.y >= 0.0 && fUv.y <= 1.0);
+}
+
+
+
