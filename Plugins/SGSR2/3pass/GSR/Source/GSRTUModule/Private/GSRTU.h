@@ -79,7 +79,7 @@ private:
 	mutable TLockFreePointerListFIFO<FGSRState, PLATFORM_CACHE_LINE_SIZE> Availablestates;
 	/*mutable class FRDGBuilder* CurrentGraphBuilder;*/
 	mutable FRDGTextureRef ReflectionTexture;
-	mutable FTexture2DRHIRef SceneColorpreAlpha;
+	mutable FTextureRHIRef SceneColorpreAlpha;
 	mutable TRefCountPtr<IPooledRenderTarget> SceneColorpreAlphaRT;
 	mutable TRefCountPtr<IPooledRenderTarget> HistoryColorRT;
 	mutable TRefCountPtr<IPooledRenderTarget> HistoryActivateRT;

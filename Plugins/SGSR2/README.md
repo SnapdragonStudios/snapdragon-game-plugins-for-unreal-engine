@@ -1,13 +1,13 @@
 # SGSR2.0 UE Plugin
 UE Plugin for Snapdragon Game Super Resolution 2.0
 
-## Build SGSR2.0 in UE5.5
+## Build SGSR2.0 in UE5.6
 This release contains two versions of SGSR2 (3pass, 2passNoAlpha).<br/>
 *1) Push subfolder "GSR" of any version of SGSR2 into folder "Plugins" of UE5 engine source code(Engine\Plugins\Runtime\Qualcomm), or project plugin folder. <br/>
 *2) Build the engine or project.<br/>
 
 
-## Enable SGSR2.0 in UE5.5
+## Enable SGSR2.0 in UE5.6
 In UE5 Editor:
 ```
 In "Project Settings" tab, apply following configs
@@ -17,15 +17,15 @@ In "Project Settings" tab, apply following configs
 	"Engine - Rendering" -> "Default Settings" -> "Anti-Aliasing Method": TemporalAA
 	"Platforms - Android" -> "APK Packaging" -> "Package game data inside .apk": enable
 	"Platforms - Android" -> "APK Packaging" -> "Minimum SDK Version": 26
-	"Platforms - Android" -> "APK Packaging" -> "Target SDK Version": 33
+	"Platforms - Android" -> "APK Packaging" -> "Target SDK Version": 34
 	"Platforms - Android" -> "Build" -> "Support arm64": check
 	"Platforms - Android" -> "Build" -> "Support OpenGL ES3.1": check
 	"Platforms - Android" -> "Build" -> "Support Vulkan": check
-	"Platforms - Android" -> "Build" -> "Advanced APK Packaging" -> "Extra Permissions": add two items:
+	"Platforms - Android" -> "Advanced APK Packaging" -> "Extra Permissions": add two items:
 		android.permission.READ_EXTERNAL_STORAGE
 		android.permission.WRITE_EXTERNAL_STORAGE
-	"Platforms - Android" -> "Platforms - Android SDK" -> "SDKConfig" -> "SDK API Level": android-33 (according to your needs)
-	"Platforms - Android" -> "Platforms - Android SDK" -> "SDKConfig" -> "NDK API Level": android-25 (according to your needs)
+	"Platforms - Android" -> "Platforms - Android SDK" -> "SDKConfig" -> "SDK API Level": android-34 (according to your needs)
+	"Platforms - Android" -> "Platforms - Android SDK" -> "SDKConfig" -> "NDK API Level": android-26 (according to your needs)
 In "Plugins" tab, enable SGSR2:
 	"Installed" -> "Rendering" -> "SGSR2": Enabled
 ```
@@ -69,8 +69,7 @@ adb shell pm grant com.YourCompany.[PROJECT] android.permission.READ_EXTERNAL_ST
 adb shell pm grant com.YourCompany.[PROJECT] android.permission.WRITE_EXTERNAL_STORAGE
 ```
 
-## Build Andriod for UE5.5 (workable solution)
-- Apply patch, refer to UE5.5.patch
+## Build Andriod for UE5.6 (workable solution)
 - SDK: 33.0.3
 - NDK: 25.1.8937393
 - JRE: Java 17

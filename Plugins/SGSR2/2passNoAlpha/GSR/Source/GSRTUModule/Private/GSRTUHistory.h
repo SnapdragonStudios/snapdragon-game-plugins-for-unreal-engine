@@ -65,7 +65,7 @@ public:
 		return GSR;
 	}
 
-	uint32 AddRef() const final
+	FReturnedRefCountValue AddRef() const final
 	{
 		return FRefCountBase::AddRef();
 	}
