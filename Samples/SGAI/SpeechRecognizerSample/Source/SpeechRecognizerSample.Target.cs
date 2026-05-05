@@ -9,6 +9,8 @@ public class SpeechRecognizerSampleTarget : TargetRules
     {
         Type = TargetType.Game;
         DefaultBuildSettings = BuildSettingsVersion.V5;
+        bOverrideBuildEnvironment = true;
+        StaticAllocator = StaticAllocatorType.Ansi;
         ExtraModuleNames.Add("SpeechRecognizerSample");
     }
 }

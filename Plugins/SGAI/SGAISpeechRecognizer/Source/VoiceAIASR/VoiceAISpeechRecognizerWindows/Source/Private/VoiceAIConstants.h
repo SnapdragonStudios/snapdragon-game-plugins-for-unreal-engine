@@ -25,7 +25,7 @@ constexpr const char *KEY__IS_FINAL = "is_final";
 constexpr const char *KEY__TRANSCRIPTION = "transcription";
 
 constexpr const char *SPEECH = "/speech_float.eai";
-constexpr const char *ENCODER_FILE = "/encoder_model_htp.bin";
-constexpr const char *DECODER_FILE = "/decoder_model_htp.bin";
+constexpr const char *ENCODER_FILE = "/encoder.bin";
+constexpr const char *DECODER_FILE = "/decoder.bin";
 constexpr const char *VOCAB = "/vocab.bin";
 } // namespace VoiceAIConstants

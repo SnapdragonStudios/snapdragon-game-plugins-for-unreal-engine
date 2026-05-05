@@ -6,6 +6,7 @@
 #include "Android/AndroidJNI.h"
 #include "Android/AndroidJava.h"
 #include "Android/AndroidJavaEnv.h"
+#include <string>
 //
 //
 class IWhisperResponseListener

@@ -87,6 +87,30 @@ void VoiceAISpeechRecognizerWindows::SetConfiguration(const SpeechRecognizerConf
 
 //
 //
+static FString GetModelsPath(FString OverridePath)
+{
+    FString DefaultPath = FPaths::ConvertRelativePathToFull(
+            FPaths::Combine(*(IPluginManager::Get().FindPlugin("SpeechRecognizer")->GetBaseDir()),
+                            "Source/VoiceAI/ThirdParty/VoiceAIASRLib/models"));
+
+    FString ModelsPath = OverridePath;
+    if (OverridePath.IsEmpty())
+    {
+        ModelsPath = DefaultPath;
+    }
+    else
+    {
+        if (FPaths::IsRelative(OverridePath))
+        {
+            ModelsPath = FPaths::Combine(DefaultPath, ModelsPath);
+        }
+    }
+
+    return ModelsPath;
+}
+
+//
+//
 bool VoiceAISpeechRecognizerWindows::Initialize(const FSpeechRecognizerSettings &Settings)
 {
     if (WhisperObj == nullptr)
@@ -118,18 +142,7 @@ bool VoiceAISpeechRecognizerWindows::Initialize(const FSpeechRecognizerSettings 
         WhisperListener = new FWhisperResponseListenerImpl(this);
         WhisperObj->registerListener(WhisperListener);
 
-        FString ModelsPath = Settings.ModelPath;
-        if (ModelsPath.IsEmpty())
-        {
-            ModelsPath = VoiceAIASR::GetModelsPath();
-        }
-        else
-        {
-            if (FPaths::IsRelative(ModelsPath))
-            {
-                ModelsPath = FPaths::Combine(VoiceAIASR::GetModelsPath(), ModelsPath);
-            }
-        }
+        FString ModelsPath = GetModelsPath(Settings.ModelPath);
 
         ////pass paths
         std::map<std::string, std::string> input_map;

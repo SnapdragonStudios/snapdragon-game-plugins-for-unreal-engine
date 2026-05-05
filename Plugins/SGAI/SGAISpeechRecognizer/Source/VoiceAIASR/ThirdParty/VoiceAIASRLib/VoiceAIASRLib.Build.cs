@@ -21,35 +21,27 @@ public class VoiceAIASRLib : ModuleRules
 
         var libs = new List<string> { "WhisperComponent.lib" };
 
-        var libsToPackage =
-            new List<string> { "dnnvad_wrapper.dll",   "eai_float_nonmeta.dll",  "nnvad_wrapper_lib.dll",
-                               "WhisperComponent.dll", "WhisperComponent.winmd", "WhisperLib.dll",
-                               "WhisperProjection.dll" };
+        var libsToPackage = new List<string> { "dnnvad.dll", "WhisperComponent.dll", "WhisperComponent.winmd",
+                                               "WhisperLib.dll", "WhisperProjection.dll" };
 
-        var modelsToPackage = new List<string> { "models/speech_float.eai", "models/vocab.bin",
-                                                 "models/decoder_model_htp.bin", "models/encoder_model_htp.bin" };
+        var qnnCpuLibsToPackage = new List<string> { "libQnnCpu.dll" };
+
+        var modelsToPackage =
+            new List<string> { "models/vocab.bin", "models/decoder.bin", "models/encoder.bin" };
 
         if (Target.Platform == UnrealTargetPlatform.Win64)
         {
-            string archString = "arm64ec-windows-msvc";
-
-            if (Target.WindowsPlatform.Architecture == UnrealArch.Arm64)
-            {
-                archString = "aarch64-windows-msvc";
-            }
-
             PublicDelayLoadDLLs.Add("WhisperComponent.dll");
-            LinkLibs(libs, archString);
-            PackageLibs(libsToPackage, archString);
+            LinkLibs(libs, "lib\\windows\\ARM64X");
+            PackageLibs(libsToPackage, "lib\\windows\\ARM64X");
             PackageFiles(modelsToPackage);
         }
 
         if (Target.Platform == UnrealTargetPlatform.Android)
         {
-            System.IO.DirectoryInfo di =
-                new System.IO.DirectoryInfo(Path.Combine(ModuleDirectory, "lib", "android", "arm64-v8a"));
-
             AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(ModuleDirectory, "AndroidPackaging.xml"));
+            AdditionalPropertiesForReceipt.Add("AndroidPlugin",
+                                               Path.Combine(ModuleDirectory, "AndroidPackaging_QairtCpu.xml"));
         }
     }
 
@@ -62,18 +54,12 @@ public class VoiceAIASRLib : ModuleRules
     private void PackageLibs(List<string> libs, string platformId)
     {
         foreach (var item in libs)
-            RuntimeDependencies.Add(Path.Combine(ModuleDirectory, "lib", platformId, item));
-    }
-
-    private void PackageLibs(List<string> libs)
-    {
-        foreach (var item in libs)
-            RuntimeDependencies.Add(Path.Combine(ModuleDirectory, "lib", item));
+            RuntimeDependencies.Add(Path.Combine(ModuleDirectory, platformId, item));
     }
 
     private void LinkLibs(List<string> libs, string platformId)
     {
         foreach (var item in libs)
-            PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "lib", platformId, item));
+            PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, platformId, item));
     }
 }

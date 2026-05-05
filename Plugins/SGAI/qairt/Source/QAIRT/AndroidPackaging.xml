@@ -1,14 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root xmlns:android="http://schemas.android.com/apk/res/android">
+    <resourceCopies>
+        <log text="Copying QAIRT Libs..."/>
+		<setString result="QAIRTSrcDir" value="$S(AbsPluginDir)/../ThirdParty/qairt/lib/aarch64-android"/>
+		<setString result="QAIRTDstDir" value="$S(BuildDir)/libs/$S(Architecture)"/>
+		<dumpvars/>
+		<!-- BEGIN QAIRT Runtime -->
+		<copyFile src="$S(QAIRTSrcDir)/libQnnDsp.so" 		dst="$S(QAIRTDstDir)/libQnnDsp.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnDspV66Skel.so" dst="$S(QAIRTDstDir)/libQnnDspV66Skel.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnDspV66Stub.so" dst="$S(QAIRTDstDir)/libQnnDspV66Stub.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnGpu.so" 		dst="$S(QAIRTDstDir)/libQnnGpu.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtp.so" 		dst="$S(QAIRTDstDir)/libQnnHtp.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpPrepare.so" dst="$S(QAIRTDstDir)/libQnnHtpPrepare.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV68Skel.so" dst="$S(QAIRTDstDir)/libQnnHtpV68Skel.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV68Stub.so" dst="$S(QAIRTDstDir)/libQnnHtpV68Stub.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV69Skel.so" dst="$S(QAIRTDstDir)/libQnnHtpV69Skel.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV69Stub.so" dst="$S(QAIRTDstDir)/libQnnHtpV69Stub.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV73Skel.so" dst="$S(QAIRTDstDir)/libQnnHtpV73Skel.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV73Stub.so" dst="$S(QAIRTDstDir)/libQnnHtpV73Stub.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV75Skel.so" dst="$S(QAIRTDstDir)/libQnnHtpV75Skel.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV75Stub.so" dst="$S(QAIRTDstDir)/libQnnHtpV75Stub.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV79Skel.so" dst="$S(QAIRTDstDir)/libQnnHtpV79Skel.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV79Stub.so" dst="$S(QAIRTDstDir)/libQnnHtpV79Stub.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV81Skel.so" dst="$S(QAIRTDstDir)/libQnnHtpV81Skel.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnHtpV81Stub.so" dst="$S(QAIRTDstDir)/libQnnHtpV81Stub.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnSystem.so" 	dst="$S(QAIRTDstDir)/libQnnSystem.so" />
+		<!-- END QAIRT RUNTIME -->
+    </resourceCopies>
     <androidManifestUpdates>
         <addElements tag="application">
             <uses-native-library android:name="libcdsprpc.so" android:required="false"/>
         </addElements>
     </androidManifestUpdates>
-	<buildGradleAdditions>
-		<insert>
-			dependencies {implementation("com.qualcomm.qti:qnn-runtime:2.42.0")}
-        </insert>
-	</buildGradleAdditions>
-
 </root>

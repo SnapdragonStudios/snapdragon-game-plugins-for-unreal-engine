@@ -18,7 +18,7 @@ enum class ESpeechRecognizerConfigurationSettings : uint8
     ESRCS_VADTHRESHOLD UMETA(DisplayName = "vadthreshold"),
     ESRCS_PARTIAL UMETA(DisplayName = "partial"),
     ESRCS_NONSPEECH UMETA(DisplayName = "nonspeech"),
-    ESRCS_CONTINUOUS UMETA(Hidden),
+    ESRCS_CONTINUOUS UMETA(DisplayName = "continuous"),
     ESRCS_VADHANGOVER UMETA(DisplayName = "vadhangover")
 };
 

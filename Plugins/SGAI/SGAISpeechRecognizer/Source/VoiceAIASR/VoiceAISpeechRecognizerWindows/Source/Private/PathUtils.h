@@ -3,13 +3,11 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+
 namespace VoiceAIASR
 {
 //
 //
 FString GetBinariesPath();
-
-//
-//
-FString GetModelsPath();
 } // namespace VoiceAIASR

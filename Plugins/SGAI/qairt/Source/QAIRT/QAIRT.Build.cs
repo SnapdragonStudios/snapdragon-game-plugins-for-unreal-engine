@@ -19,7 +19,6 @@ public class QAIRT : ModuleRules
         {
             var libsToPackage = new List<string> { "QnnCpu.dll",
                                                    "QnnGenAiTransformer.dll",
-                                                   "QnnGenAiTransformerCpuOpPkg.dll",
                                                    "QnnGenAiTransformerModel.dll",
                                                    "QnnModelDlc.dll",
                                                    "QnnSaver.dll" };

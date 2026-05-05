@@ -10,6 +10,8 @@
 #include <jni.h>
 #include <string>
 
+DECLARE_LOG_CATEGORY_EXTERN(LogVoiceAIASRAndroid, Log, All)
+
 TUniquePtr<FWhisperJava> FWhisperJava::Wrap(jobject JavaObject)
 {
     TUniquePtr<FWhisperJava> WhisperJavaObject = MakeUnique<FWhisperJava>();
@@ -68,9 +70,9 @@ int FWhisperJava::Init(const FString &ModelDirPath)
         Env, (jstring)FJavaWrapper::CallObjectMethod(Env, FJavaWrapper::GameActivityThis, GetNativeLibDirMethod));
 
     TArray<FString> StringPaths = {
-        ModelDirPath / "vocab.bin",             //.................
-        ModelDirPath / "encoder_model_htp.bin", //.................
-        ModelDirPath / "decoder_model_htp.bin"  //.................
+        ModelDirPath / "vocab.bin",   //.................
+        ModelDirPath / "encoder.bin", //.................
+        ModelDirPath / "decoder.bin"  //.................
     };
     TArray<FStringView> Paths = {
         StringPaths[0],
@@ -78,8 +80,8 @@ int FWhisperJava::Init(const FString &ModelDirPath)
         StringPaths[2]  //.................
     };
 
-    FScopedJavaObject<jstring> jADSPPath = GetJString(NativeLibDir);                      // jni
-    FScopedJavaObject<jstring> jDNNModel = GetJString(ModelDirPath / "speech_float.eai"); // speech_float.eai
+    FScopedJavaObject<jstring> jADSPPath = GetJString(NativeLibDir);                       // jni
+    FScopedJavaObject<jstring> jDNNModel = GetJString(NativeLibDir / "libnnvad_model.so"); // speech_float.eai
 
     UE_LOG(LogVoiceAIASRAndroid, Warning, TEXT("NativeLibDir = %s"), *NativeLibDir);
 

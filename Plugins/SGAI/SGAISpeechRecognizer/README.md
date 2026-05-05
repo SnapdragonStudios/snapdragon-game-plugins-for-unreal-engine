@@ -73,16 +73,16 @@ This plugin provides real-time speech-to-text capabilities for Unreal Engine. Bu
 ## Prerequisites
 
 #### Voice AI SDK
-[Download](https://qpm.qualcomm.com/#/main/tools/details/VoiceAI_ASR_Community) the Voice AI ASR SDK from Qualcomm Package Manager - [Voice AI SDK](https://qpm.qualcomm.com/#/main/tools/details/VoiceAI_ASR_Community)
+[Download](https://qpm.qualcomm.com/#/main/tools/details/VoiceAI_ASR) the Voice AI ASR SDK from Qualcomm Package Manager - [Voice AI SDK](https://qpm.qualcomm.com/#/main/tools/details/VoiceAI_ASR)
 #### Unreal Engine
 - Developed with Unreal Engine 5.6
 - Supported platforms: Win64, Android
 
 #### Required Plugins
 The following Unreal Engine plugins must be enabled:
-| Plugin | Description|
-|-----|----|
-|**QAIRT**| Qualcomm AI Runtime for NPU acceleration|
+| Plugin | Version | Description|
+|-----|----|----|
+|**[QAIRT](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/5.6/Plugins/SGAI/qairt)**| v2.45+ | Qualcomm AI Runtime for NPU acceleration|
 
 ## Installation
 
@@ -93,7 +93,7 @@ The following Unreal Engine plugins must be enabled:
 ### Step 2: Download Voice AI SDK
 
 1. Download and install the **Voice AI ASR SDK** from Qualcomm Package Manager:
-   [Voice AI SDK](https://qpm.qualcomm.com/#/main/tools/details/VoiceAI_ASR_Community)
+   [Voice AI SDK](https://qpm.qualcomm.com/#/main/tools/details/VoiceAI_ASR)
 
 2. Run `Setup.bat` to extract the required binaries.
 
@@ -102,13 +102,18 @@ The following Unreal Engine plugins must be enabled:
 Each Whisper model requires three files placed in the `models/` directory:
 
 ```
-plugin/SpeechRecognizer/Source/VoiceAI/ThirdParty/VoiceAIASRLib/models/
-├── encoder_model_htp.bin
-├── decoder_model_htp.bin
+plugin/SGAISpeechRecognizer/Source/VoiceAIASR/ThirdParty/VoiceAIASRLib/models/
+├── encoder.bin
+├── decoder.bin
 └── vocab.bin
 ```
 
 > **Note:** The `models/` directory is intentionally kept empty in the repo. Model files are excluded from version control due to their large size.
+
+> **Note:** On Android, the model files aren't packaged into the APK by default. For the sample, manual push the files to the following location.
+```
+/sdcard/Android/data/<packagename>/files/UnrealGame/SpeechRecognizerSample/SpeechRecognizerSample/models
+```
 
 Follow the steps below to obtain all three files.
 
@@ -125,43 +130,22 @@ Follow the steps below to obtain all three files.
 2. Click **Download Model** on the AI Hub page.
 
 3. In the **Download Model** dialog:
-   - **Choose runtime** → Select **Qualcomm® AI Runtime** (not ONNX Runtime)
+   - **Choose runtime** → Select **Qualcomm® Voice AI**
    - **Choose device** → Select your target Snapdragon device (e.g., Snapdragon® X Elite)
 
-4. **Download the Decoder**: Select **HfWhisperDecoder** under "Choose model" and click **Download model**. 
+4. Place the 3 files in the `models/` directory.
+   - `decoder.bin` 
+   - `encoder.bin`
+   - `vocab.bin`
 
-5. **Download the Encoder**: Select **HfWhisperEncoder** under "Choose model" and click **Download model**.
-
-6. Rename the downloaded decoder file to `decoder_model_htp.bin` and the encoder file to `encoder_model_htp.bin`, then place both in the `models/` directory.
-
-#### Step 3b: Generate Vocabulary File
-
-The vocabulary file is generated using a script included with the Voice AI SDK (downloaded in Step 2).
-
-1. Navigate to the vocabulary generation folder inside the Voice AI SDK:
-    ```
-    VoiceAI_ASR_Community_v2.3.0.0/2.3.0.0/notebook/whisper/npu/whisper_vocab/
-    ```
-    This folder contains:
-    ```
-    whisper_vocab/
-    ├── generate_whisper_vocab.py
-    └── README.md
-    ```
-
-2. Follow the instructions in the `README.md` to run `generate_whisper_vocab.py` and generate the `vocab.bin` file.
-
-3. Copy the generated `vocab.bin` into the `models/` directory.
 
 #### Step 3c: Verify
 
 After completing all installation steps, your `VoiceAIASRLib` directory should look like this:
 
 ```
-plugin/SpeechRecognizer/Source/VoiceAI/ThirdParty/VoiceAIASRLib/
+plugin/SGAISpeechRecognizer/Source/VoiceAIASR/ThirdParty/VoiceAIASRLib/
 ├── assets/
-│   ├── data/
-│   └── speech_float.eai
 ├── inc/
 │   ├── DataAvailableListener.h
 │   ├── InputStream.h
@@ -169,12 +153,14 @@ plugin/SpeechRecognizer/Source/VoiceAI/ThirdParty/VoiceAIASRLib/
 │   └── WhisperResponseListener.h
 ├── lib/
 │   ├── android/
-│   │   └── whisper_all_quantized/
+│   │   └── arm64-v8a/
+|   |   └── whispersdk.jar
 │   └── windows/
-│       └── whisper_all_quantized/
+│       └── ARM64/
+│       └── ARM64X/
 ├── models/
-│   ├── decoder_model_htp.bin
-│   ├── encoder_model_htp.bin
+│   ├── decoder.bin
+│   ├── encoder.bin
 │   └── vocab.bin
 ├── AndroidPackaging.xml
 └── VoiceAIASRLib.Build.cs
@@ -464,7 +450,6 @@ SpeechRecognizer->Initialize(Config, OnInitializedDelegate);
 |-----|-----|
 |__USpeechRecognizer__|Blueprint-accessible UObject, Manages lifecycle and delegates, Platform-agnostic API|
 |__USpeechProcessor__|Combines Audio Capture and Recognition, Feeds audio to recognizer|
-|__VoiceCaptureWorker__|Background thread for audio capture|
 |__VoiceAISpeechRecognizerWindows__|Windows-specific implementation|
 |__VoiceAISpeechRecognizerAndroid__|Android-specific implementation|
 

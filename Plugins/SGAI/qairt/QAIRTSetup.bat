@@ -12,7 +12,7 @@ setlocal enabledelayedexpansion
 :: Target:   {plugin-root}/Source/ThirdParty/qairt/
 :: ============================================================================
 
-set SDK_VERSION=2.42.0.251225
+set SDK_VERSION=2.45.0.260326
 
 :: Minimum Hexagon DSP version to include (versions at or below this are skipped)
 set MIN_HEXAGON_VER=66
@@ -149,13 +149,6 @@ set "SDK_EXISTS=0"
 if exist "%THIRDPARTY_DIR%\inc" if exist "%THIRDPARTY_DIR%\lib" set "SDK_EXISTS=1"
 
 if "%SDK_EXISTS%"=="1" (
-    echo [WARNING] Existing SDK installation detected.
-    echo.
-    set /p OVERWRITE="Overwrite? (y/n): "
-    if /i not "!OVERWRITE!"=="y" (
-        echo [INFO] Setup cancelled.
-        goto :end
-    )
     echo [INFO] Removing existing installation...
     if exist "%THIRDPARTY_DIR%\inc" rmdir /s /q "%THIRDPARTY_DIR%\inc" 2>nul
     if exist "%THIRDPARTY_DIR%\lib" rmdir /s /q "%THIRDPARTY_DIR%\lib" 2>nul
@@ -221,7 +214,8 @@ echo [INFO] Download complete (%FILE_SIZE_MB% MB).
 :do_extract
 echo [INFO] Extracting SDK...
 
-powershell -ExecutionPolicy Bypass -Command "Expand-Archive -Path '%TEMP_ZIP%' -DestinationPath '%TEMP_DIR%\ex' -Force"
+mkdir "%TEMP_DIR%\ex" 2>nul
+tar -xf "%TEMP_ZIP%" -C "%TEMP_DIR%\ex"
 
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Extraction failed. ZIP may be corrupted.
@@ -286,8 +280,6 @@ if "%FILE_SIZE%"=="0" (
     goto :error
 )
 
-call :detect_version_from_path "%USER_ZIP_PATH%"
-
 if exist "%TEMP_DIR%" rmdir /s /q "%TEMP_DIR%" 2>nul
 mkdir "%TEMP_DIR%"
 if not exist "%TEMP_DIR%" (
@@ -316,8 +308,6 @@ if not exist "%USER_FOLDER_PATH%\*" (
     echo [ERROR] Folder not found.
     goto :error
 )
-
-call :detect_version_from_path "%USER_FOLDER_PATH%"
 
 set "SDK_BASE_PATH=%USER_FOLDER_PATH%"
 
@@ -532,7 +522,7 @@ for %%F in (!SO_FILES! !CAT_FILES!) do (
 if "!ANY_FOUND!"=="0" goto :eof
 
 :: Copy to Windows ARM targets
-set "HEX_TARGETS=aarch64-windows-msvc arm64x-windows-msvc"
+set "HEX_TARGETS=aarch64-windows-msvc arm64x-windows-msvc aarch64-android"
 
 for %%T in (!HEX_TARGETS!) do (
     set "TDIR=%THIRDPARTY_DIR%\lib\%%T"
@@ -550,48 +540,6 @@ for %%T in (!HEX_TARGETS!) do (
             )
         )
     )
-)
-
-goto :eof
-
-:: ============================================================================
-:: Subroutine: Detect SDK version from path string
-:: ============================================================================
-
-:detect_version_from_path
-set "DPATH=%~1"
-set "DETECTED_VERSION="
-
-for %%V in (2.42.0.251225 2.43.0.260128 2.44.0 2.45.0) do (
-    echo !DPATH! | findstr /C:"%%V" >nul 2>&1
-    if !ERRORLEVEL! equ 0 (
-        set "DETECTED_VERSION=%%V"
-        goto :version_found
-    )
-)
-
-:version_found
-if defined DETECTED_VERSION (
-    echo [INFO] Detected SDK version: !DETECTED_VERSION!
-    if not "!DETECTED_VERSION!"=="%SDK_VERSION%" (
-        echo [WARNING] Differs from recommended version %SDK_VERSION%.
-        echo.
-        set /p "VER_OK=Continue? (y/n): "
-        if /i not "!VER_OK!"=="y" (
-            echo [INFO] Setup cancelled.
-            goto :error
-        )
-        echo.
-    )
-) else (
-    echo [INFO] Could not detect SDK version. Recommended: %SDK_VERSION%
-    echo.
-    set /p "VER_OK=Continue? (y/n): "
-    if /i not "!VER_OK!"=="y" (
-        echo [INFO] Setup cancelled.
-        goto :error
-    )
-    echo.
 )
 
 goto :eof

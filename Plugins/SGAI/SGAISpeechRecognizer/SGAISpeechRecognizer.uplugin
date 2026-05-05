@@ -25,14 +25,6 @@
       ]
     },
     {
-      "Name": "VoiceAISpeechRecognizerWindows",
-      "Type": "Runtime",
-      "LoadingPhase": "None",
-      "PlatformAllowList": [
-        "Win64"
-      ]
-    },
-    {
       "Name": "VoiceAISpeechRecognizerAndroid",
       "Type": "Runtime",
       "LoadingPhase": "None",

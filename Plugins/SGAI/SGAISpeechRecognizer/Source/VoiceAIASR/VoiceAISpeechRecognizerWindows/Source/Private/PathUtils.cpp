@@ -24,13 +24,4 @@ FString GetBinariesPath()
         FPaths::Combine(*(IPluginManager::Get().FindPlugin("SpeechRecognizer")->GetBaseDir()),
                         "Source/VoiceAI/ThirdParty/VoiceAIASRLib/lib", *platform_sub_dir));
 }
-
-//
-//
-FString GetModelsPath()
-{
-    return FPaths::ConvertRelativePathToFull(
-        FPaths::Combine(*(IPluginManager::Get().FindPlugin("SpeechRecognizer")->GetBaseDir()),
-                        "Source/VoiceAI/ThirdParty/VoiceAIASRLib/models"));
-}
 } // namespace VoiceAIASR

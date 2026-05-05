@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+    <resourceCopies>
+        <log text="##>>>>>> Copying QAIRT CPU Libs..."/>
+		<setString result="QAIRTSrcDir" value="$S(AbsPluginDir)/../../../../../QAIRT/Source/ThirdParty/qairt/lib/aarch64-android"/>
+		<setString result="QAIRTDstDir" value="$S(BuildDir)/libs/$S(Architecture)"/>
+		<copyFile src="$S(QAIRTSrcDir)/libQnnCpu.so"					dst="$S(QAIRTDstDir)/libQnnCpu.so" />
+		<copyFile src="$S(QAIRTSrcDir)/libQnnCpuNetRunExtensions.so"	dst="$S(QAIRTDstDir)/libQnnCpuNetRunExtensions.so" />
+    </resourceCopies>
+</root>

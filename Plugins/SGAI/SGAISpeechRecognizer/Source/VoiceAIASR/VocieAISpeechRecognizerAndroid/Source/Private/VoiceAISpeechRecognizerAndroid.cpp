@@ -18,7 +18,7 @@ VoiceAISpeechRecognizerAndroid::~VoiceAISpeechRecognizerAndroid()
     Reset();
 }
 
-TUniquePtr<FWhisperBuilder> GetWhisperBuilder(const SpeechRecognizerConfigurationSettings &Configuration)
+static TUniquePtr<FWhisperBuilder> GetWhisperBuilder(const SpeechRecognizerConfigurationSettings &Configuration)
 {
     TUniquePtr<FWhisperBuilder> WhisperBuilder = MakeUnique<FWhisperBuilder>();
     ESpeechRecognizerConfigurationSettings key;
@@ -89,6 +89,28 @@ TUniquePtr<FWhisperBuilder> GetWhisperBuilder(const SpeechRecognizerConfiguratio
 
 //
 //
+static FString GetModelsPath(FString OverridePath)
+{
+    FString DefaultPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*(FPaths::ProjectDir() / "models"));
+
+    FString ModelsPath = OverridePath;
+    if (OverridePath.IsEmpty())
+    {
+        ModelsPath = DefaultPath;
+    }
+    else
+    {
+        if (FPaths::IsRelative(OverridePath))
+        {
+            ModelsPath = FPaths::Combine(DefaultPath, ModelsPath);
+        }
+    }
+
+    return ModelsPath;
+}
+
+//
+//
 bool VoiceAISpeechRecognizerAndroid::Initialize(const FSpeechRecognizerSettings &Settings)
 {
     Reset();
@@ -107,7 +129,7 @@ bool VoiceAISpeechRecognizerAndroid::Initialize(const FSpeechRecognizerSettings 
         initialSettings.Add(ESpeechRecognizerConfigurationSettings::ESRCS_VADTHRESHOLD, "0.85");
         initialSettings.Add(ESpeechRecognizerConfigurationSettings::ESRCS_PARTIAL, "0");
         initialSettings.Add(ESpeechRecognizerConfigurationSettings::ESRCS_NONSPEECH, "0");
-        initialSettings.Add(ESpeechRecognizerConfigurationSettings::ESRCS_CONTINUOUS, "1");
+        initialSettings.Add(ESpeechRecognizerConfigurationSettings::ESRCS_CONTINUOUS, "0");
         initialSettings.Add(ESpeechRecognizerConfigurationSettings::ESRCS_VADHANGOVER, "120");
         for (auto &Entry : Settings.Configuration)
         {
@@ -120,8 +142,7 @@ bool VoiceAISpeechRecognizerAndroid::Initialize(const FSpeechRecognizerSettings 
         WhisperObj = WhisperBuilder->Build();
     }
 
-    bool success = WhisperObj->Init(
-        IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*(FPaths::ProjectDir() / "models")));
+    bool success = WhisperObj->Init(GetModelsPath(Settings.ModelPath));
 
     if (success == false)
     {
@@ -171,11 +192,17 @@ void VoiceAISpeechRecognizerAndroid::OnError(int errorCode)
 
 void VoiceAISpeechRecognizerAndroid::OnRecordingStopped()
 {
+    if (OnStoppedCallback)
+    {
+        OnStoppedCallback();
+    }
 }
 
 void VoiceAISpeechRecognizerAndroid::OnFinished()
 {
-    // TODO:
+    if (WhisperObj != nullptr) {
+        WhisperObj->Stop();
+    }
 }
 
 void VoiceAISpeechRecognizerAndroid::OnSpeechStart()
@@ -188,10 +215,6 @@ void VoiceAISpeechRecognizerAndroid::OnSpeechStart()
 
 void VoiceAISpeechRecognizerAndroid::OnSpeechEnd()
 {
-    if (OnStoppedCallback)
-    {
-        OnStoppedCallback();
-    }
 }
 
 int VoiceAISpeechRecognizerAndroid::Read(uint8 *arr, int offset, int length)
@@ -214,6 +237,10 @@ void VoiceAISpeechRecognizerAndroid::Start(const SpeechToTextStartedCallbackFn &
     if (WhisperObj != nullptr)
     {
         ForceStop();
+        if (AudioBufferQueue != nullptr)
+        {
+            AudioBufferQueue->reset();
+        }
         this->OnTranscriptionCallback = OnTranscriptionCallbackFn;
         this->OnStartedCallback = OnStartedCallbackFn;
         this->OnStoppedCallback = OnStoppedCallbackFn;

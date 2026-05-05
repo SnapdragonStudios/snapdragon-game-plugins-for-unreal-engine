@@ -6,6 +6,7 @@
 #if PLATFORM_ANDROID
 
 #include "AudioCaptureCore.h"
+#include "IAudioStream.h"
 #include "oboe/Oboe.h"
 
 namespace SGAISpeechRecognizer

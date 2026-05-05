@@ -2,8 +2,9 @@
 <root xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Copy the Whisper SDK JAR that houses all needed libs -->
     <resourceCopies>
-        <log text="Copying SNPE AAR..."/>
+        <log text="Copying Voice AI files..."/>
         <copyFile src="$S(AbsPluginDir)/lib/android/whisper-sdk.jar" dst="$S(BuildDir)/libs/whisper-sdk.jar"/>
+        <copyFile src="$S(AbsPluginDir)/assets/arm64-v8a_android/libnnvad_model.so" dst="$S(BuildDir)/libs/$S(Architecture)/libnnvad_model.so"/>
         <copyDir src="$S(PluginDir)/lib/android/$S(Architecture)" dst="$S(BuildDir)/libs/$S(Architecture)"/>
     </resourceCopies>
     <gradleAdditions>
