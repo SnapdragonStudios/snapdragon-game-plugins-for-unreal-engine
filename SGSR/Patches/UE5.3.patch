@@ -1,0 +1,13 @@
+diff --git a/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp b/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp
+index 1aeb51480c01..f64ec0377896 100644
+--- a/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp
++++ b/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp
+@@ -565,7 +565,7 @@ public:
+ 
+ 		static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+ 	{
+-		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
++			return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5) || Parameters.Platform == SP_VULKAN_ES3_1_ANDROID;
+ 	}
+ };
+ 

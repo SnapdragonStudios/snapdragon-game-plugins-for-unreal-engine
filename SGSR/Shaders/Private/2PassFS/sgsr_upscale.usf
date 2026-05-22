@@ -1,0 +1,231 @@
+//============================================================================================================
+//
+//
+//                  Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+//                              SPDX-License-Identifier: BSD-3-Clause
+//
+//============================================================================================================
+
+#include "sgsr_common.ush"
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Private/ScreenPass.ush"
+
+// =====================================================================================
+//
+// SHADER RESOURCES
+//
+// =====================================================================================
+Texture2D<half4> InputColor;
+Texture2D<half4> MotionDepthClipAlphaBuffer;
+Texture2D<half4> PrevHistoryOutput;
+
+SamplerState PointClamp;
+SamplerState LinearClamp;
+uint bSameCamera;
+float Exposure_co_rcp;
+float ValidReset;
+float MinLerpContribution; // 0.0 or 0.3, when camera move 0.0, camera freeze 0.3
+float Scalefactor;
+float Biasmax_viewportXScale;
+
+#define GSR_USE_5_TAP SAMPLE_NUMBER
+#define GSR_LANCZOS_OPT LANCZOS_OPT
+#define COMPUTE_THIN_FEATURE THIN_FEATURE
+// =====================================================================================
+// 
+// SNAPDRAGON GAME SUPER RESOLUTION
+// 
+// =====================================================================================
+half3 Tonemap(half3 fRgb)
+{
+    return fRgb / (max(max(0.0, fRgb.r), max(fRgb.g, fRgb.b)) + 1.0).xxx;
+}
+
+half ComputeLuma(half3 fRgb)
+{
+    half luma = dot(Tonemap(fRgb), half3(0.2126, 0.7152, 0.0722));
+    return pow(luma, 1.0 / 18.0);
+}
+
+#if GSR_LANCZOS_OPT
+half FastLanczos(half x2)
+{
+	//x2 = min(x2, 4.0f);
+    half a = (2.0 / 5.0) * x2 - 1.0;
+    half b = (1.0 / 4.0) * x2 - 1.0;
+    return ((25.0 / 16.0) * a * a - (9.0 / 16.0)) * (b * b);
+}
+#else
+half FastLanczos(half base)
+{
+    half y = base - 1.0;
+    half y2 = y * y;
+    half y_temp = 0.75 * y + y2;
+    return y_temp * y2;
+}
+#endif
+
+// =====================================================================================
+//
+// ENTRY POINTS
+//
+// =====================================================================================
+void MainPS(noperspective float4 UVAndScreenPos : TEXCOORD0, float4 SvPosition : SV_POSITION, out float4 OutColor : SV_Target0)
+{
+    //Prepare UV
+    float2 Hruv = SvPosition.xy * OutputInfo_ViewportSizeInverse;
+    float2 Jitteruv;
+    Jitteruv.x = saturate(Hruv.x + InputJitter.x * InputInfo_ViewportSizeInverse.x);
+    Jitteruv.y = saturate(Hruv.y + InputJitter.y * InputInfo_ViewportSizeInverse.y);
+    
+    int2 InputPos = int2(Hruv * InputInfo_ViewportSize);
+    half4 mda = MotionDepthClipAlphaBuffer.SampleLevel(LinearClamp, Jitteruv, 0).xyzw;
+    float2 PrevUV;
+
+    PrevUV.x = saturate(Hruv.x - 0.5 * mda.x);
+    PrevUV.y = saturate(Hruv.y + 0.5 * mda.y);
+    
+    half depthclip = mda.z;
+    half3 HistoryColor = PrevHistoryOutput.SampleLevel(LinearClamp, PrevUV, 0).xyz;
+
+	//Upsample and Compute box
+    half4 Upsampledcw = half4(0, 0, 0, 0);
+    half kernelfactor = ValidReset;
+    half biasmax = Biasmax_viewportXScale;
+    half biasmin = max(1.0, 0.3 + 0.3 * biasmax);
+    half biasfactor = max(0.25 * depthclip, kernelfactor);
+#if GSR_LANCZOS_OPT
+    half kernelbias = lerp(biasmax, biasmin, biasfactor);
+#else
+    half kernelbias = lerp(biasmax, biasmin, biasfactor) * 0.5;
+#endif
+    half motion_viewport_len = length(mda.xy * OutputInfo_ViewportSize);
+    half curvebias = lerp(-2.0, -3.0, saturate(motion_viewport_len * 0.02));
+    half curvebias2 = curvebias * LOG2E;
+
+    half3 rectboxcenter = half3(0.0, 0.0, 0.0);
+    half3 rectboxvar = half3(0.0, 0.0, 0.0);
+    half rectboxweight = 0.0;
+
+    float2 srcpos = InputPos + float2(0.5, 0.5) - InputJitter;
+#if GSR_LANCZOS_OPT
+    half kernelbias2 = kernelbias;
+#else
+    half kernelbias2 = kernelbias * kernelbias;
+#endif
+    float2 srcpos_srcOutputPos = srcpos - Hruv * InputInfo_ViewportSize;
+    
+
+#if GSR_USE_5_TAP
+    static const int TAP_COUNT = 5;
+    const int SIMILAR_CNT_TH = 5;
+    static const int2 OFFS[TAP_COUNT] =
+    {
+        int2( 0, 1),
+        int2( 1, 0),
+        int2(-1, 0),
+        int2( 0, 0),
+        int2( 0,-1),
+    };
+    //kernelbias2 *= 0.87;
+#else
+    static const int TAP_COUNT = 9;
+    const int SIMILAR_CNT_TH = 7;
+    static const int2 OFFS[TAP_COUNT] =
+    {
+        int2(-1, -1), int2(0, -1), int2(1, -1),
+        int2(-1, 0), int2(0, 0), int2(1, 0),
+        int2(-1, 1), int2(0, 1), int2(1, 1),
+    };
+#endif
+
+    half3 rectboxmin = 65504.0.xxx;
+    half3 rectboxmax = 0.0.xxx;
+#if COMPUTE_THIN_FEATURE
+    half fNucleus = ComputeLuma(InputColor[InputPos].xyz);
+    half similarth = 1.05;
+    int similarCount = TAP_COUNT;
+#endif
+    [loop]
+    for (int i = 0; i < TAP_COUNT; ++i)
+    {
+        int2 p = InputPos + OFFS[i];
+        half3 samplecolor = InputColor[p].xyz;
+#if GSR_LANCZOS_OPT
+        half2 baseoffset = (srcpos_srcOutputPos + half2(OFFS[i])) * kernelbias2;
+        half baseoffset_dot = dot(baseoffset, baseoffset);
+        half base = min(baseoffset_dot, 4.0);
+#else
+        half2 baseoffset = srcpos_srcOutputPos + half2(OFFS[i]);
+        half baseoffset_dot = dot(baseoffset, baseoffset);
+        half base = saturate(baseoffset_dot * kernelbias2);
+#endif
+        half weight = FastLanczos(base);
+        Upsampledcw += half4(samplecolor * weight, weight);
+        half boxweight = exp2(baseoffset_dot * curvebias2);
+        half3 wsample = samplecolor * boxweight;
+        rectboxcenter += wsample;
+        rectboxvar += samplecolor * wsample;
+        rectboxweight += boxweight;
+        rectboxmin = min(rectboxmin, samplecolor);
+        rectboxmax = max(rectboxmax, samplecolor);
+#if COMPUTE_THIN_FEATURE
+        half luma = ComputeLuma(samplecolor);
+        half diff = max(luma, fNucleus) / (min(luma, fNucleus) + FLT_FP16_MIN);
+        if (diff > similarth)
+        {
+            similarCount--;
+        }
+#endif
+    }
+
+    rectboxweight = 1.0 / rectboxweight;
+    rectboxcenter *= rectboxweight;
+    rectboxvar *= rectboxweight;
+    rectboxvar = sqrt(abs(rectboxvar - rectboxcenter * rectboxcenter));
+    
+    Upsampledcw.xyz = clamp(Upsampledcw.xyz / Upsampledcw.w, rectboxmin, rectboxmax);
+    Upsampledcw.w *= 1.0 / half(TAP_COUNT);
+
+    half baseupdate = 1.0 - depthclip;
+    baseupdate = min(baseupdate, lerp(baseupdate, Upsampledcw.w * 10.0, saturate(10.0 * motion_viewport_len)));
+    baseupdate = min(baseupdate, lerp(baseupdate, Upsampledcw.w, saturate(motion_viewport_len * 0.05)));
+    half basealpha = baseupdate;
+
+    half boxscale = max(depthclip, saturate(motion_viewport_len * 0.05));
+    half boxsize = lerp(Scalefactor, 1.0, boxscale);
+
+    half3 sboxvar = rectboxvar * boxsize;
+    half3 boxmin = rectboxcenter - sboxvar;
+    half3 boxmax = rectboxcenter + sboxvar;
+    rectboxmax = min(rectboxmax, boxmax);
+    rectboxmin = max(rectboxmin, boxmin);
+
+    half3 clampedcolor = clamp(HistoryColor, rectboxmin, rectboxmax);
+    half startLerpValue = MinLerpContribution;
+
+    half3 below = step(HistoryColor, rectboxmin);
+    half3 above = step(rectboxmax, HistoryColor);
+    half outOfBox = saturate(below.x + below.y + below.z + above.x + above.y + above.z);
+    half lerpcontribution = lerp(1.0, startLerpValue, outOfBox);
+    HistoryColor = lerp(clampedcolor, HistoryColor, saturate(lerpcontribution));
+
+    half basemin = min(basealpha, 0.1);
+    basealpha = lerp(basemin, basealpha, saturate(lerpcontribution));
+
+	//Blend Color
+    half alphasum = max(FLT_FP16_MIN, basealpha + Upsampledcw.w);
+
+    half beta = 0.0;
+#if COMPUTE_THIN_FEATURE
+    if (mda.w < 0.01 && similarCount < SIMILAR_CNT_TH)
+    {
+        beta = 0.1;
+    }
+#endif
+    half alpha = saturate((Upsampledcw.w / alphasum + ValidReset) - beta);
+
+    Upsampledcw.xyz = lerp(HistoryColor, Upsampledcw.xyz, alpha.xxx);
+    Upsampledcw.xyz = clamp(Upsampledcw.xyz, rectboxmin, rectboxmax);
+    OutColor = Upsampledcw.xyzw;
+}

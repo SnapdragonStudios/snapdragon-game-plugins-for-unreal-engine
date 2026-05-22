@@ -1,0 +1,16 @@
+diff --git a/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp b/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp
+index 92997564f8f6..4a856524ef12 100644
+--- a/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp
++++ b/Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp
+@@ -590,9 +590,9 @@ public:
+ 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, RWEyeAdaptationTexture)
+ 		END_SHADER_PARAMETER_STRUCT()
+ 
+-		static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
++	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+ 	{
+-		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
++			return true;
+ 	}
+ };
+ 

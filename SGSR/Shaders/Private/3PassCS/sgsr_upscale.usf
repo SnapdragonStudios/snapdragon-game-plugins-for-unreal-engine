@@ -1,0 +1,11 @@
+//============================================================================================================
+//
+//
+//                  Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+//                              SPDX-License-Identifier: BSD-3-Clause
+//
+//============================================================================================================
+
+#include "sgsr_common.ush"
+#include "/Engine/Public/Platform.ush"
+#include "/ThirdParty/SGSR/3PassCS/sgsr_upscale.hlsl"
