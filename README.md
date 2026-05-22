@@ -12,6 +12,10 @@
 		- [Snapdragon™ Game Super Resolution 1](#snapdragon-game-super-resolution-1)
 	- [Qualcomm™ NPE Plugin](#qualcomm-npe-plugin)
 	- [Qualcomm™ Shadow Denoiser](#qualcomm-shadow-denoiser)
+	- [Snapdragon™ Game AI SDK](#snapdragon-game-ai-sdk)
+		- [Speech Recognizer](#speech-recognizer)
+		- [LLM Pipelines](#llm-pipelines)
+		- [Text to Speech](#text-to-speech)
 - [License](#license)
 
 # Introduction
@@ -35,8 +39,17 @@ Note: The plugins are normally just drag and drop, and usually they can all be u
 ## Snapdragon™ Game Super Resolution
 
 *Available Engine Versions:*
-| [4.27 SGSR1](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/4.27/Plugins/SGSR) | [4.27 SGSR2](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/4.27/Plugins/SGSR2) | [5.0-5.6](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/5.6/Plugins/SGSR) |
-|------|-----|-----|
+
+#### UE4:
+| [4.27 SGSR1](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/4.27/Plugins/SGSR) | [4.27 SGSR2](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/4.27/Plugins/SGSR2) |
+|------|------|
+
+#### UE5 SGSR1 & SGSR2:
+ |[5.0][SGSR_UE5_Link] | [5.1][SGSR_UE5_Link] | [5.2][SGSR_UE5_Link] | [5.3][SGSR_UE5_Link] | [5.4][SGSR_UE5_Link] | [5.5][SGSR_UE5_Link] | [5.6][SGSR_UE5_Link] | [5.7][SGSR_UE5_Link] |
+|-----|-----|-----|-----|-----|-----|-----|-----|
+
+[SGSR_UE5_Link]: https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/SGSR_UE5
+
 ### Snapdragon™ Game Super Resolution 2
 
 <img src="media/sgsr2_hero_image.png" width="720px" >
@@ -84,6 +97,35 @@ This plugin enables hardware acceleration of AI model inference on devices with 
 
 Plugin for reducing noise in ray-traced shadows on both desktop and mobile renderers, with optimizations for Qualcomm® Adreno™ GPUs.
 
-# License
+## Snapdragon™ Game AI SDK
+*Available Engine Versions:*
+| [5.6](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/5.6/Plugins/SGAI) |
+|------|
 
+Snapdragon™ Game AI SDK provides a comprehensive suite of on-device AI features optimized for real-time game scenarios. 
+
+![Snapdragon™ Game AI](media/sgai.png)
+
+### Speech Recognizer
+| [5.6](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/5.6/Plugins/SGAI/SGAISpeechRecognizer) |
+|------|
+
+Transform player voice input into text with real-time speech recognition.
+- Real-time voice-to-text conversion
+- NPU accelerated inference using Qualcomm's Voice AI SDK
+### LLM Pipelines
+| [5.6](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/5.6/Plugins/SGAI/SGAILLMPipelines) |
+|------|
+
+Integrate large language models into your game for dynamic, context-aware AI interactions.
+- Seamless LLM integration in Unreal Engine
+- NPU accelerated LLM inference using Qualcomm's GenIE SDK.
+### Text to Speech
+| [5.6](https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/5.6/Plugins/SGAI/SGAITextToSpeech) |
+|------|
+
+Bring your game characters to life with natural-sounding, AI-generated speech.
+- Real-time audio generation
+- NPU accelerated inference using Qualcomm's Voice AI SDK
+# License
 Check out the [LICENSE](LICENSE) for more details.
