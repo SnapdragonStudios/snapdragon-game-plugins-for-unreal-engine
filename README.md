@@ -45,8 +45,8 @@ Note: The plugins are normally just drag and drop, and usually they can all be u
 |------|------|
 
 #### UE5 SGSR1 & SGSR2:
- |[5.0][SGSR_UE5_Link] | [5.1][SGSR_UE5_Link] | [5.2][SGSR_UE5_Link] | [5.3][SGSR_UE5_Link] | [5.4][SGSR_UE5_Link] | [5.5][SGSR_UE5_Link] | [5.6][SGSR_UE5_Link] | [5.7][SGSR_UE5_Link] |
-|-----|-----|-----|-----|-----|-----|-----|-----|
+ |[5.0][SGSR_UE5_Link] | [5.1][SGSR_UE5_Link] | [5.2][SGSR_UE5_Link] | [5.3][SGSR_UE5_Link] | [5.4][SGSR_UE5_Link] | [5.5][SGSR_UE5_Link] | [5.6][SGSR_UE5_Link] | [5.7][SGSR_UE5_Link] | [5.8][SGSR_UE5_Link] |
+|-----|-----|-----|-----|-----|-----|-----|-----|-----|
 
 [SGSR_UE5_Link]: https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/SGSR_UE5
 
