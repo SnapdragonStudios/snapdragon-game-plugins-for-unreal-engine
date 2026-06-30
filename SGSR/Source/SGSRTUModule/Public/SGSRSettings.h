@@ -20,7 +20,7 @@ enum class ESGSRMethod : int32
 {
 	SU UMETA(DisplayName = "Spatial Upscaling"),
 	TU_2Pass_FS UMETA(DisplayName = "Temperal Upscaling 2 Pass Fragment Shader"),
-	TU_3Pass_CS UMETA(DisplayName = "Temperal Upscaling 3 Pass Computer Shader"),
+	TU_3Pass_CS UMETA(DisplayName = "Temperal Upscaling 3 Pass Compute Shader"),
 };
 
 /////SGSR SU Target

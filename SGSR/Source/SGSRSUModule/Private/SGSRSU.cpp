@@ -18,7 +18,7 @@
 		Subpass->step(GraphBuilder, View, PassInputs); \
 	}
 
-DECLARE_GPU_STAT(SnapdragonSuperResolutionPass);
+DECLARE_GPU_STAT_NAMED(SGSRPass, TEXT("SGSRPass"));
 
 FSGSRSU::FSGSRSU(ESGSRMode InMode, TArray<TSharedPtr<FSGSRData>> InViewData)
 	: Mode(InMode)
@@ -39,7 +39,11 @@ ISpatialUpscaler* FSGSRSU::Fork_GameThread(const class FSceneViewFamily& ViewFam
 
 FScreenPassTexture FSGSRSU::AddPasses(FRDGBuilder& GraphBuilder, const FViewInfo& View, const FInputs& PassInputs) const
 {
-	RDG_GPU_STAT_SCOPE(GraphBuilder, SnapdragonSuperResolutionPass);
+#if ENGINE_MINOR_VERSION < 8
+	RDG_GPU_STAT_SCOPE(GraphBuilder, SGSRPass);
+#else
+	RDG_EVENT_SCOPE_STAT(GraphBuilder, SGSRPass, "SGSRPass");
+#endif
 	check(PassInputs.SceneColor.IsValid());
 
 	if (PassInputs.Stage == EUpscaleStage::SecondaryToOutput)

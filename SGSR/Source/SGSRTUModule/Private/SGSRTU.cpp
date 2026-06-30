@@ -23,11 +23,14 @@
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 1
 #include "DataDrivenShaderPlatformInfo.h"
 #endif
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 8
+#include "SceneViewState.h"
+#endif
 #include "RenderGraphUtils.h"
 #include "RenderGraphBuilder.h"
 //#include "PostProcess/PostProcessMitchellNetravali.h"
 
-DECLARE_GPU_STAT(SGSRPass);
+DECLARE_GPU_STAT_NAMED(SGSRPass, TEXT("SGSRPass"));
 DECLARE_GPU_STAT_NAMED(SGSRDispatch, TEXT("SGSR Dispatch"));
 
 typedef enum SGSRQualityMode
@@ -742,7 +745,11 @@ SGSRPassOutput FSGSRTU::AddPasses_2PassFS(FRDGBuilder& GraphBuilder, const SGSRV
 	{
 		ISGSRTemporalUpscaler::FOutputs Outputs;
 
+#if ENGINE_MINOR_VERSION < 8
 		RDG_GPU_STAT_SCOPE(GraphBuilder, SGSRPass);
+#else
+		RDG_EVENT_SCOPE_STAT(GraphBuilder, SGSRPass, "SGSRPass");
+#endif
 		RDG_EVENT_SCOPE(GraphBuilder, "SGSR Temporal Upscaler - 2Pass Fragment Shader");
 
 		GEngine->AddOnScreenDebugMessage(0, 1.0f, FColor::Red, FString::Printf(TEXT("SGSR Temporal Upscaler - 2Pass Fragment Shader")));
@@ -974,18 +981,18 @@ SGSRPassOutput FSGSRTU::AddPasses_2PassFS(FRDGBuilder& GraphBuilder, const SGSRV
 			PassParameters->PrevHistoryOutput = PrevHistory.Color;
 			PassParameters->Exposure_co_rcp = View.PrevViewInfo.SceneColorPreExposure / View.PreExposure;
 			PassParameters->ValidReset = bReset;
-			PassParameters->MinLerpContribution = 0.0;
+			PassParameters->MinLerpContribution = 0.0f;
 			if (bSameCamera)
 			{
-				SameFrameNum += 1.0;
+				SameFrameNum += 1.0f;
 				if (SameFrameNum > 1)
 				{
-					PassParameters->MinLerpContribution = 0.3;
+					PassParameters->MinLerpContribution = 0.3f;
 				}
 			}
 			else
 			{
-				SameFrameNum = 0.0;
+				SameFrameNum = 0.0f;
 			}
 
 			float scalefactor = FMath::Min(20.0f, (float)pow((CommonParameters.HistoryInfo.ViewportSize / CommonParameters.InputInfo.ViewportSize).X * (CommonParameters.HistoryInfo.ViewportSize / CommonParameters.InputInfo.ViewportSize).Y, 3.0f));
@@ -1074,8 +1081,11 @@ SGSRPassOutput FSGSRTU::AddPasses_3PassCS(FRDGBuilder& GraphBuilder, const SGSRV
 	check((View.PrimaryScreenPercentageMethod == EPrimaryScreenPercentageMethod::TemporalUpscale));
 	{
 		ISGSRTemporalUpscaler::FOutputs Outputs;
-
+#if ENGINE_MINOR_VERSION < 8
 		RDG_GPU_STAT_SCOPE(GraphBuilder, SGSRPass);
+#else
+		RDG_EVENT_SCOPE_STAT(GraphBuilder, SGSRPass, "SGSRPass");
+#endif
 		RDG_EVENT_SCOPE(GraphBuilder, "SGSR Temporal Upscaler - 3Pass Compute Shader");
 
 		GEngine->AddOnScreenDebugMessage(0, 1.0f, FColor::Red, FString::Printf(TEXT("SGSR Temporal Upscaler - 3Pass Compute Shader")));
@@ -1293,7 +1303,11 @@ SGSRPassOutput FSGSRTU::AddPasses_3PassCS(FRDGBuilder& GraphBuilder, const SGSRV
 			PassParameters->DilatedMotionDepthLuma = GraphBuilder.CreateUAV(DilatedMotionDepthLuma);
 
 			FSGSRConvertCS::FPermutationDomain PermutationVector;
+#if ENGINE_MINOR_VERSION < 8
 			PermutationVector.Set<FSGSRConvertCS::FInvertedDepthDim>(bool(ERHIZBuffer::IsInverted));
+#else
+			PermutationVector.Set<FSGSRConvertCS::FInvertedDepthDim>(true);
+#endif
 			PermutationVector.Set<FSGSRConvertCS::FBasePermutationDomain>(BasePermutationVector);
 
 			TShaderMapRef<FSGSRConvertCS> ComputeShader(View.ShaderMap, PermutationVector);
@@ -1338,7 +1352,11 @@ SGSRPassOutput FSGSRTU::AddPasses_3PassCS(FRDGBuilder& GraphBuilder, const SGSRV
 			// PF_R32_UINT
 			PassParameters->DilatedMotionDepthLuma = DilatedMotionDepthLuma;
 
+#if ENGINE_MINOR_VERSION < 8
 			const bool bInverted = bool(ERHIZBuffer::IsInverted);
+#else
+			const bool bInverted = true;
+#endif
 			const bool bInfinite = true;
 			float fMax;
 			float fMin;
@@ -1393,7 +1411,11 @@ SGSRPassOutput FSGSRTU::AddPasses_3PassCS(FRDGBuilder& GraphBuilder, const SGSRV
 			PassParameters->NewLocks = NewLocksUAVRef;
 
 			FSGSRActivateCS::FPermutationDomain PermutationVector;
+#if ENGINE_MINOR_VERSION < 8
 			PermutationVector.Set<FSGSRActivateCS::FInvertedDepthDim>(bool(ERHIZBuffer::IsInverted));
+#else
+			PermutationVector.Set<FSGSRActivateCS::FInvertedDepthDim>(true);
+#endif
 			PermutationVector.Set<FSGSRActivateCS::FPixelLockDim>(CVarSGSRPixelLock.GetValueOnRenderThread());
 			PermutationVector.Set<FSGSRActivateCS::FBasePermutationDomain>(BasePermutationVector);
 
@@ -1445,7 +1467,11 @@ SGSRPassOutput FSGSRTU::AddPasses_3PassCS(FRDGBuilder& GraphBuilder, const SGSRV
 			FSGSRUpscaleCS::FPermutationDomain PermutationVector;
 			PermutationVector.Set<FSGSRUpscaleCS::FSampleNumberDim>(CVarSGSRSample.GetValueOnRenderThread());
 			PermutationVector.Set<FSGSRUpscaleCS::FDoSharpeningDim>(CVarSGSRSharpening.GetValueOnRenderThread());
+#if ENGINE_MINOR_VERSION < 8
 			PermutationVector.Set<FSGSRUpscaleCS::FInvertedDepthDim>(bool(ERHIZBuffer::IsInverted));
+#else
+			PermutationVector.Set<FSGSRUpscaleCS::FInvertedDepthDim>(true);
+#endif
 			PermutationVector.Set<FSGSRUpscaleCS::FPixelLockDim>(CVarSGSRPixelLock.GetValueOnRenderThread());
 			PermutationVector.Set<FSGSRUpscaleCS::FBasePermutationDomain>(BasePermutationVector);
 			TShaderMapRef<FSGSRUpscaleCS> ComputeShader(View.ShaderMap, PermutationVector);
@@ -1492,6 +1518,10 @@ SGSRPassOutput FSGSRTU::AddPasses_3PassCS(FRDGBuilder& GraphBuilder, const SGSRV
 		if (bWritePrevViewInfo)
 		{
 			GraphBuilder.QueueTextureExtraction(History.Color, &HistoryColorRT);
+			if (CVarSGSRPixelLock.GetValueOnRenderThread())
+			{
+				GraphBuilder.QueueTextureExtraction(NewLocks, &NewLocksRT);
+			}
 		}
 
 		Outputs.FullRes.Texture = ColorOutputTexture;

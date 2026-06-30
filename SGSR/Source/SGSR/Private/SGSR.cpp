@@ -12,7 +12,7 @@
 
 #include "Runtime/Launch/Resources/Version.h"
 
-static_assert((ENGINE_MAJOR_VERSION == 5 && (ENGINE_MINOR_VERSION <= 7 && ENGINE_MINOR_VERSION >= 0)), "SGSR plugin only supports UE5.0 - UE5.7");
+static_assert((ENGINE_MAJOR_VERSION == 5 && (ENGINE_MINOR_VERSION <= 8 && ENGINE_MINOR_VERSION >= 0)), "SGSR plugin only supports UE5.0 - UE5.8");
 
 IMPLEMENT_MODULE(FSGSRModule, SGSR)
 

@@ -1,5 +1,5 @@
 # SGSR UE Plugin
-UE Plugin for Snapdragon Game Super Resolution, supporting UE 5.0-5.7
+UE Plugin for Snapdragon Game Super Resolution, supporting UE 5.0-5.8
 
 ## Build SGSR in UE
 This release contains 3 methods of SGSR:<br/>
@@ -128,11 +128,11 @@ adb shell pm grant com.YourCompany.[PROJECT] android.permission.WRITE_EXTERNAL_S
   - 5.0: 21.4.7075529
   - 5.1: 25.2.9519653
   - 5.2-5.6: 25.1.8937393
-  - 5.7: 27.2.12479018
+  - 5.7,5.8: 27.2.12479018
 - JRE:
   - 5.0-5.2: Java 1.8.0_242
   - 5.3-5.6: Java 17
-  - 5.7: Java 21
+  - 5.7,5.8: Java 21
 ## Settings
 
 ### General

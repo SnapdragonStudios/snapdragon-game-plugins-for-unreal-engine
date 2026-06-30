@@ -14,6 +14,9 @@
 #include "PostProcess/TemporalAA.h"
 #include "Containers/LockFreeList.h"
 #include "SGSRTUHistory.h"
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 8
+#include "PostProcess/PostProcessInputs.h"
+#endif
 
 struct FPostProcessingInputs;
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 2
@@ -109,6 +112,7 @@ private:
 	mutable FTextureRHIRef SceneColorpreAlpha;
 	mutable TRefCountPtr<IPooledRenderTarget> SceneColorpreAlphaRT;
 	mutable TRefCountPtr<IPooledRenderTarget> HistoryColorRT;
+	mutable TRefCountPtr<IPooledRenderTarget> NewLocksRT;
 
 	static float SavedScreenPercentage; 
 };

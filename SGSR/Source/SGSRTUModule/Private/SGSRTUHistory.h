@@ -11,7 +11,9 @@
 #include "CoreMinimal.h"
 #include "SceneRendering.h"
 #include "HAL/Platform.h"
-
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 8
+#include "Templates/RefCounting.h"
+#endif
 class FSGSRTU;
 
 //////GSR state, deletion handled by RHI
@@ -51,7 +53,12 @@ using ICustomTemporalAAHistory = UE::Renderer::Private::ITemporalUpscaler::IHist
 #endif
 
 /////ICustomTemporalAAHistory for GSR
-class FGSRTUHistory final : public ICustomTemporalAAHistory, public FRefCountBase
+class FGSRTUHistory final : public ICustomTemporalAAHistory, 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 8
+	public FRefCountBase
+#else
+	public TRefCountingMixin<FGSRTUHistory>
+#endif
 {
 public:
 	FGSRTUHistory(SGSRstateRef state, FSGSRTU* upscaler);
@@ -68,7 +75,7 @@ public:
 	{
 		return GSR;
 	}
-
+#if ENGINE_MINOR_VERSION < 8
 #if	ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION <= 5
 	uint32 AddRef() const final
 #elif ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 6
@@ -77,7 +84,6 @@ public:
 	{
 		return FRefCountBase::AddRef();
 	}
-
 	uint32 Release() const final
 	{
 		return FRefCountBase::Release();
@@ -87,6 +93,24 @@ public:
 	{
 		return FRefCountBase::GetRefCount();
 	}
+#else
+	virtual void AddRef() const override
+	{
+		TRefCountingMixin<FGSRTUHistory>::AddRef();
+	}
+
+	virtual FReturnedRefCountValue Release() const override
+	{
+		return TRefCountingMixin<FGSRTUHistory>::Release();
+	}
+
+	virtual FReturnedRefCountValue GetRefCount() const override
+	{
+		return TRefCountingMixin<FGSRTUHistory>::GetRefCount();
+	}
+#endif //ENGINE_MINOR_VERSION < 8
+
+
 
 private:
 	SGSRstateRef GSR;

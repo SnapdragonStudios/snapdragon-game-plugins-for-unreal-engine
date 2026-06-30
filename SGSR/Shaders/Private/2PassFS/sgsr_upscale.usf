@@ -80,6 +80,9 @@ void MainPS(noperspective float4 UVAndScreenPos : TEXCOORD0, float4 SvPosition :
     
     int2 InputPos = int2(Hruv * InputInfo_ViewportSize);
     half4 mda = MotionDepthClipAlphaBuffer.SampleLevel(LinearClamp, Jitteruv, 0).xyzw;
+    uint MDAWidth, MDAHeight, MDAMipLevels;
+    MotionDepthClipAlphaBuffer.GetDimensions(0, MDAWidth, MDAHeight, MDAMipLevels);
+    
     float2 PrevUV;
 
     PrevUV.x = saturate(Hruv.x - 0.5 * mda.x);
@@ -150,6 +153,9 @@ void MainPS(noperspective float4 UVAndScreenPos : TEXCOORD0, float4 SvPosition :
     for (int i = 0; i < TAP_COUNT; ++i)
     {
         int2 p = InputPos + OFFS[i];
+        p.x = clamp(p.x, 0, MDAWidth - 1); // clamp to safe coords
+        p.y = clamp(p.y, 0, MDAHeight - 1);
+        
         half3 samplecolor = InputColor[p].xyz;
 #if GSR_LANCZOS_OPT
         half2 baseoffset = (srcpos_srcOutputPos + half2(OFFS[i])) * kernelbias2;
